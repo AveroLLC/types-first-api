@@ -3,7 +3,7 @@ import { Service, Handler } from './service';
 import { of, defer, throwError, Observable } from 'rxjs';
 import { map, delay, mergeMap, tap, finalize } from 'rxjs/operators';
 import { Context } from './context';
-import { ErrorCodes, IError } from './errors';
+import { ErrorCodes, IError, DEFAULT_SERVER_ERROR } from './errors';
 
 interface IncrementRequest {
   val: number;
@@ -40,14 +40,14 @@ interface AppContext {
 }
 
 describe('Server', () => {
-  let s: Service<TestService, Context<AppContext>, Dependencies>;
+  let s: Service<TestService, AppContext, Dependencies>;
   let context: Context<AppContext>;
   const usersSvc = {
     authenticate: () => of(true).pipe(delay(1000)),
   };
 
   beforeEach(() => {
-    s = new Service<TestService, Context<AppContext>, Dependencies>(null, {
+    s = new Service<TestService, AppContext, Dependencies>(null, {
       usersSvc,
     });
     context = Context.create({});
@@ -82,10 +82,7 @@ describe('Server', () => {
 
           const call = s.call('increment', of({ val: 1, add: 2 }), context);
 
-          return expect(call.toPromise()).rejects.toMatchObject({
-            code: ErrorCodes.Internal,
-            message: 'Something went wrong while processing the request.',
-          });
+          return expect(call.toPromise()).rejects.toMatchObject(DEFAULT_SERVER_ERROR);
         });
 
         it('should create a structured error from random thrown errors', () => {
@@ -94,7 +91,7 @@ describe('Server', () => {
           const call = s.call('increment', of({ val: 1, add: 2 }), context);
 
           return expect(call.toPromise()).rejects.toMatchObject({
-            code: ErrorCodes.Internal,
+            code: ErrorCodes.ServerError,
             message: 'OH LORDY',
           });
         });
@@ -212,6 +209,23 @@ describe('Server', () => {
         return expect(response.toPromise()).resolves.toEqual({ val: 12 });
       });
 
+      it('allows middleware to mutate context', () => {
+        s.addMiddleware((req, ctx, deps, next) => {
+          ctx.set('user', { username: 'hello', birthday: new Date() });
+          return next(req, ctx);
+        });
+
+        s.registerServiceHandler('increment', (req$, ctx) => {
+          return of({
+            val: ctx.get('user').username.length,
+          });
+        });
+
+        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+
+        return expect(response.toPromise()).resolves.toEqual({ val: 5 });
+      });
+
       it('allows the middleware to execute async actions before invoking next', () => {
         s.addMiddleware((req, ctx, deps, next) => {
           return deps.usersSvc.authenticate().pipe(mergeMap(() => next(req, ctx)));
@@ -263,14 +277,7 @@ describe('Server', () => {
 
         return response.toPromise().then(v => {
           expect(v).toEqual({ val: 12 });
-          expect(t).toBeGreaterThan(1000);
-        });
-      });
-
-      it('whatever', () => {
-        s.addMiddleware((req, ctx, deps, next) => {
-          ctx.set('user', { username: 'helo', birthday: new Date() });
-          return next(req, ctx);
+          expect(t).toBeGreaterThanOrEqual(1000);
         });
       });
     });

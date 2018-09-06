@@ -6,9 +6,10 @@ export enum ErrorCodes {
   NotAuthenticated = 'Not Authenticated',
   NotAuthorized = 'Not Authorized',
   NotFound = 'Not Found',
-  Internal = 'Internal',
   Unavailable = 'Unavailable',
   NetworkError = 'Network Error',
+  ServerError = 'Server Error',
+  ClientError = 'Client Error',
 }
 
 export const ERROR_CODES_TO_HTTP_STATUS: { [Code in ErrorCodes]: number } = {
@@ -17,9 +18,10 @@ export const ERROR_CODES_TO_HTTP_STATUS: { [Code in ErrorCodes]: number } = {
   [ErrorCodes.NotAuthenticated]: 401,
   [ErrorCodes.NotAuthorized]: 403,
   [ErrorCodes.NotFound]: 404,
-  [ErrorCodes.Internal]: 500,
   [ErrorCodes.Unavailable]: 0,
   [ErrorCodes.NetworkError]: 0,
+  [ErrorCodes.ServerError]: 500,
+  [ErrorCodes.ClientError]: 0,
 };
 
 export const HEADERS = {
@@ -35,26 +37,35 @@ export interface IError {
   upstream?: IError;
 }
 
+export const DEFAULT_SERVER_ERROR: IError = {
+  code: ErrorCodes.ServerError,
+  message: 'Something went wrong while processing the request',
+};
+
+export const DEFAULT_CLIENT_ERROR: IError = {
+  code: ErrorCodes.ClientError,
+  message: 'Something went wrong while preparing the request',
+};
+
 export function isIError(err: any): err is IError {
   return err != null && isString(err.code) && isString(err.message);
 }
 
-export function normalizeError(err: any): IError {
+export function normalizeError(err: any, defaultError: IError): IError {
   if (isIError(err)) {
     return err;
   }
 
   if (isError(err)) {
     return {
-      code: ErrorCodes.Internal,
+      ...defaultError,
       message: err.message,
       stackTrace: err.stack,
     };
   }
 
   return {
-    code: ErrorCodes.Internal,
-    message: 'Something went wrong while processing the request.',
-    details: err,
+    ...defaultError,
+    details: `${err}`,
   };
 }

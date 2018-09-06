@@ -5,31 +5,33 @@ import * as _ from 'lodash';
 import { isError } from 'util';
 import { catchError, map } from 'rxjs/operators';
 import { Context } from './context';
-import { IError, ErrorCodes, normalizeError } from './errors';
+import { IError, ErrorCodes, normalizeError, DEFAULT_SERVER_ERROR } from './errors';
 
 export interface Handler<
   TReq,
   TRes,
-  TContext extends Context<any> = Context<{}>,
+  TContext extends Record<string, any> = {},
   TDependencies extends object = {}
 > {
-  (request$: Request<TReq>, context: TContext, dependencies: TDependencies): Response<
-    TRes
-  >;
+  (
+    request$: Request<TReq>,
+    context: Context<TContext>,
+    dependencies: TDependencies
+  ): Response<TRes>;
 }
 
 export interface Middleware<
   TService extends GRPCService<TService>,
-  TContext extends Context<any> = Context<{}>,
+  TContext extends Record<string, any> = {},
   TDependencies extends object = {}
 > {
   (
     request$: Request<TService[keyof TService]['request']>,
-    context: TContext,
+    context: Context<TContext>,
     dependencies: TDependencies,
     next: (
       request$: Request<TService[keyof TService]['request']>,
-      context: TContext
+      context: Context<TContext>
     ) => Response<TService[keyof TService]['response']>,
     methodName: keyof TService
   ): Response<TService[keyof TService]['response']>;
@@ -37,7 +39,7 @@ export interface Middleware<
 
 export type HandlerMap<
   TService extends GRPCService<TService>,
-  TContext extends Context<any> = Context<{}>,
+  TContext extends Record<string, any> = {},
   TDependencies extends object = {}
 > = {
   [K in keyof TService]: Handler<
@@ -50,7 +52,7 @@ export type HandlerMap<
 
 export class Service<
   TService extends GRPCService<TService>,
-  TContext extends Context<any> = Context<{}>,
+  TContext extends Record<string, any> = {},
   TDependencies extends object = {}
 > {
   private _handlers: HandlerMap<TService, TContext, TDependencies> = {} as HandlerMap<
@@ -98,11 +100,14 @@ export class Service<
   call = <K extends keyof TService>(
     method: K,
     request: Request<TService[K]['request']>,
-    context: TContext
+    context: Context<TContext>
   ): Observable<TService[K]['response']> => {
     const handler = this._handlers[method] || this._notImplemented(method);
 
-    const handlerNext = (req: Request<TService[K]['request']>, ctx: TContext) => {
+    const handlerNext = (
+      req: Request<TService[K]['request']>,
+      ctx: Context<TContext>
+    ) => {
       return handler(req, ctx, this._dependencies);
     };
 
@@ -119,7 +124,9 @@ export class Service<
     const response$ = defer(() => stack(request, context));
 
     // Will always throw a structured error
-    return response$.pipe(catchError(err => throwError(normalizeError(err))));
+    return response$.pipe(
+      catchError(err => throwError(normalizeError(err, DEFAULT_SERVER_ERROR)))
+    );
   };
 
   getName = (): string => {
