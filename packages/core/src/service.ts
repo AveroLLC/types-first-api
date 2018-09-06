@@ -1,6 +1,5 @@
 import { GRPCService, Metadata, Request, Response } from './interfaces';
 import { Observable, throwError, of, defer } from 'rxjs';
-import * as grpc from 'grpc';
 import * as pbjs from 'protobufjs';
 import * as _ from 'lodash';
 import { isError } from 'util';

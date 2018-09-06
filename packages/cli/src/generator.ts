@@ -2,8 +2,6 @@ import * as pbjs from 'protobufjs';
 import * as ts from 'typescript';
 import * as _ from 'lodash';
 
-const pkg = require('../../package.json');
-
 export default function generate(protoPath: string): string {
   const root = pbjs.loadSync(protoPath);
   root.resolveAll();
@@ -74,10 +72,7 @@ function initializeClientAndServer(root: pbjs.Root): ts.Statement[] {
           'clientFactory',
           null,
           ts.createCall(
-            ts.createPropertyAccess(
-              ts.createIdentifier('rxProto'),
-              'createClientFactory'
-            ),
+            ts.createPropertyAccess(ts.createIdentifier('tfapi'), 'createClientFactory'),
             [ts.createTypeReferenceNode(serviceDefinitionsIdentifier, [])],
             [rootIdentifier]
           )
@@ -91,10 +86,7 @@ function initializeClientAndServer(root: pbjs.Root): ts.Statement[] {
           'serverFactory',
           null,
           ts.createCall(
-            ts.createPropertyAccess(
-              ts.createIdentifier('rxProto'),
-              'createServerFactory'
-            ),
+            ts.createPropertyAccess(ts.createIdentifier('tfapi'), 'createServerFactory'),
             [ts.createTypeReferenceNode(serviceDefinitionsIdentifier, [])],
             [rootIdentifier]
           )
@@ -289,7 +281,7 @@ function buildMethods(method: pbjs.Method, name: string): ts.TypeElement {
     [],
     name,
     null,
-    ts.createTypeReferenceNode('rxProto.Endpoint', [
+    ts.createTypeReferenceNode('tfapi.Endpoint', [
       ts.createTypeReferenceNode(method.requestType, []),
       ts.createTypeReferenceNode(method.responseType, []),
     ]),
@@ -302,12 +294,9 @@ function buildSourceFile(statements: ts.Statement[]) {
     ts.createImportDeclaration(
       [],
       [],
-      ts.createImportClause(
-        null,
-        ts.createNamespaceImport(ts.createIdentifier('rxProto'))
-      ),
+      ts.createImportClause(null, ts.createNamespaceImport(ts.createIdentifier('tfapi'))),
       // ts.createLiteral('rxjs-protos') // TODO: uncomment this
-      ts.createLiteral(pkg.name)
+      ts.createLiteral('@types-first-api/core')
     ),
     ts.createImportDeclaration(
       [],

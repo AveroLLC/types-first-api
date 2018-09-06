@@ -1,7 +1,6 @@
-import { GRPCServiceMap, Client } from '../interfaces';
+import { GRPCServiceMap } from './interfaces';
 import * as pbjs from 'protobufjs';
-import * as grpcClient from '../grpc/grpcClient';
-import * as httpClient from '../http/httpClient';
+import { Client } from './client';
 
 export function createClientFactory<
   TServiceDefinitions extends GRPCServiceMap<TServiceDefinitions>
