@@ -1,0 +1,23 @@
+{
+  "name": "@types-first-api/http-server",
+  "version": "0.0.1",
+  "description": "Types-First API Http Server implementation",
+  "main": "index.js",
+  "types": "dest/index.d.ts",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@types-first-api/core": "0.0.1",
+    "express": "^4.16.3",
+    "lodash": "^4.17.10",
+    "protobufjs": "^6.8.8",
+    "rxjs": "^6.3.2"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^4.16.0",
+    "@types/lodash": "^4.14.116"
+  }
+}

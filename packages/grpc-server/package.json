@@ -1,12 +1,12 @@
 {
-  "name": "@types-first-api/core",
+  "name": "@types-first-api/grpc-server",
   "version": "0.0.1",
-  "description": "Types-First API Core",
+  "description": "Types-First API GRPC server",
   "main": "dest/index.js",
-  "types":"dest/index.d.ts",
   "files": [
     "dest"
   ],
+  "types": "dest/index.d.ts",
   "scripts": {
     "test": "jest",
     "prepare": "tsc"
@@ -14,11 +14,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types-first-api/core": "0.0.1",
+    "grpc": "^1.14.2",
     "lodash": "^4.17.10",
     "protobufjs": "^6.8.8",
     "rxjs": "^6.3.2"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.116"
+    "@types/lodash": "^4.14.116",
+    "@types/protobufjs": "^6.0.0"
   }
 }

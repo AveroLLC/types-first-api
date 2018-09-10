@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+import "Time.proto";
+
+package wtf.guys;
+
+service EchoService {
+  rpc Echo(Echo) returns (Echo);
+}
+
+message Echo {
+  required string message = 1;
+}
+
+service SchedulingService {
+  rpc Unary(Appointment) returns (Appointment) {}
+  rpc ClientStream(stream Appointment) returns (Appointment) {}
+  rpc ServerStream(Appointment) returns (stream Appointment) {}
+  rpc BidiStream(stream Appointment) returns (stream Appointment) {}
+}
+
+enum DayOfWeek {
+  MON = 0;
+  TUES = 1;
+  WED = 2;
+  THURS = 3;
+  FRI = 4;
+  SAT = 5;
+  SUN = 6;
+}
+
+message Appointment {
+  message NestedMessage {
+    string value = 1;
+  }
+
+  string name = 1;
+  string location = 2;
+  avero.Time.Date date = 3;
+  avero.Time.Duration duration = 4;
+  repeated string attendees = 5;
+  oneof source {
+    string salesforceId = 6;
+    string outlookId = 7;
+    string calendarId = 8;
+  }
+
+  NestedMessage nested = 9;
+  DayOfWeek dayofWeek = 10;
+  required string id = 11;
+  map<string, DayOfWeek> days = 12;
+}

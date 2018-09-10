@@ -24,6 +24,11 @@ export interface ClientMiddleware<TService extends GRPCService<TService>, TConte
   ): Response<TService[keyof TService]['response']>;
 }
 
+export type ClientConstructor<
+  TService extends GRPCService<TService>,
+  TContext = {}
+> = new (protoService: pbjs.Service) => Client<TService, TContext>;
+
 export abstract class Client<TService extends GRPCService<TService>, TContext = {}> {
   private _middleware: ClientMiddleware<TService, TContext>[] = [];
 
@@ -32,7 +37,7 @@ export abstract class Client<TService extends GRPCService<TService>, TContext = 
 
   constructor(protoService: pbjs.Service) {
     this.pbjsService = protoService;
-    this.rpc = _.mapValues(protoService.methods, (method, methodName) => {
+    this.rpc = _.mapValues(protoService.methods, (m, methodName) => {
       return (req, ctx) => {
         return this.invokeCall(methodName, req, ctx);
       };
@@ -55,17 +60,17 @@ export abstract class Client<TService extends GRPCService<TService>, TContext = 
     context: Context<TContext>
   ): Response<TService[K]['response']> => {
     const handlerNext = (
-      req: Request<TService[K]['request']>,
+      req$: Request<TService[K]['request']>,
       ctx: Context<TContext>
     ) => {
-      return this._call(methodName, req, ctx);
+      return this._call(methodName, req$, ctx);
     };
 
     const stack = _.reduceRight(
       this._middleware,
       (next, middleware) => {
-        return (req, ctx) => {
-          return middleware(req, ctx, next, methodName);
+        return (req$, ctx) => {
+          return middleware(req$, ctx, next, methodName);
         };
       },
       handlerNext

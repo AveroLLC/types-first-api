@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package avero.Time;
+
+message Date {
+  string value = 1;
+}
+
+message DateTime {
+  string value = 1;
+}
+
+message Duration {
+  string value = 1;
+}

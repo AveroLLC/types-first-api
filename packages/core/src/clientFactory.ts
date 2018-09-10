@@ -1,26 +1,23 @@
 import { GRPCServiceMap } from './interfaces';
+import { ClientConstructor } from './client';
 import * as pbjs from 'protobufjs';
-import { Client } from './client';
 
-export function createClientFactory<
-  TServiceDefinitions extends GRPCServiceMap<TServiceDefinitions>
->(pbjsRoot: pbjs.Root) {
-  function forService<K extends Extract<keyof TServiceDefinitions, string>>(
-    serviceName: K
-  ): Client<TServiceDefinitions[K]> {
-    // TODO: switch on client type
-    // switch (protocol) {
-    //   case SupportedProtocols.GRPC:
-    //     return grpcClient.createClient<TServiceDefinitions[K]>(
-    //       pbjsRoot,
-    //       serviceName,
-    //       address
-    //     );
-    //   case SupportedProtocols.HTTP:
-    //     return httpClient.createClient(pbjsRoot, serviceName, address);
-    // }
-    return null;
+export function createClientFactory<TServices extends GRPCServiceMap<TServices>>(
+  root: pbjs.Root
+) {
+  root.resolveAll();
+
+  function create<K extends Extract<keyof TServices, 'string'>>(
+    serviceName: K,
+    ClientImpl: ClientConstructor<TServices[K]>
+  ) {
+    const pbjsService = root.lookupService(serviceName);
+    if (pbjsService == null) {
+      throw new Error(`Unable to create instance of unknown service: ${serviceName}`);
+    }
+
+    return new ClientImpl(pbjsService);
   }
 
-  return { forService };
+  return { create };
 }

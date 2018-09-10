@@ -2,9 +2,17 @@
   "name": "@types-first-api/cli",
   "version": "0.0.1",
   "description": "Types-First API CLI tool",
-  "main": "index.js",
+  "main": "dest/index.js",
+  "types": "dest/index.d.ts",
+  "files": [
+    "dest"
+  ],
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepare": "tsc"
+  },
+  "bin": {
+    "tfapi": "dest/index.js"
   },
   "dependencies": {
     "@types-first-api/core": "0.0.1",

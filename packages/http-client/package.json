@@ -1,0 +1,11 @@
+{
+  "name": "@types-first-api/http-client",
+  "version": "0.0.1",
+  "description": "Types-First API HTTP client",
+  "main": "dest/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "",
+  "license": "ISC"
+}

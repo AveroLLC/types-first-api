@@ -4,7 +4,9 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": false,
-    "noUnusedParameters": false
+    "declaration": true,
+    "outDir": "dest"
   },
+  "files": ["src/index.ts"],
   "exclude": ["node_modules"]
 }

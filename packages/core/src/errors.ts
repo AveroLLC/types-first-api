@@ -12,7 +12,7 @@ export enum ErrorCodes {
   ClientError = 'Client Error',
 }
 
-export const ERROR_CODES_TO_HTTP_STATUS: { [Code in ErrorCodes]: number } = {
+export const ERROR_CODES_TO_HTTP_STATUS: Record<ErrorCodes, number> = {
   [ErrorCodes.BadRequest]: 400,
   [ErrorCodes.NotImplemented]: 501,
   [ErrorCodes.NotAuthenticated]: 401,

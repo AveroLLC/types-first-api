@@ -57,7 +57,7 @@ describe('client', () => {
         }))
       );
     });
-    // This is a mock of the
+    // This is a mock of the pbjs model
     client = new MyClient({
       methods: {
         increment: {},

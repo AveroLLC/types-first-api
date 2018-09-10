@@ -31,7 +31,7 @@ export function addToServer<TServer extends Service<any, any, any>>(
         const validationError = resMessage.verify(d);
         if (validationError) {
           const err: IError = {
-            code: ErrorCodes.Internal,
+            code: ErrorCodes.ServerError,
             message: validationError,
             stackTrace: new Error().stack,
           };

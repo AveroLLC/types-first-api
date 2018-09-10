@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as program from 'commander';
 import generate from './generator';
 import * as fs from 'fs';

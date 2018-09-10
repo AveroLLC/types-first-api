@@ -1,6 +1,4 @@
 {
-  "name": "types-first-api",
-  "private": true,
   "devDependencies": {
     "@types/jest": "^23.3.1",
     "@types/node": "^10.9.4",
@@ -10,16 +8,8 @@
     "ts-jest": "^23.1.4",
     "typescript": "^3.0.3"
   },
-  "version": "0.0.1",
-  "description": "Types-First API libraries",
-  "main": "index.js",
   "scripts": {
     "test": "jest"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "protobufjs": "^6.8.8"
   },
   "jest": {
     "transform": {

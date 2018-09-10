@@ -1,0 +1,17 @@
+{
+  "name": "example",
+  "private": true,
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "generate": "tfapi protos/Service.proto"
+  },
+  "dependencies": {
+    "@types-first-api/cli": "0.0.1",
+    "@types-first-api/core": "0.0.1"
+  },
+  "author": "",
+  "license": "ISC"
+}
