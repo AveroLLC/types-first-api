@@ -1,5 +1,13 @@
 import { of, Observable } from 'rxjs';
-import { Service, Metadata, Context } from '@types-first-api/core';
+import {
+  Service,
+  Metadata,
+  Context,
+  normalizeError,
+  HEADERS,
+  ERROR_CODES_TO_GRPC_STATUS,
+  DEFAULT_SERVER_ERROR,
+} from '@types-first-api/core';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
 
@@ -10,14 +18,13 @@ export class GrpcServer {
     _.forEach(services, service => {
       const { pbjsService } = service;
       const grpcObj = grpc.loadObject(pbjsService);
-      const serviceDef = _.get(grpcObj, [
-        service.getName(),
-        'service',
-      ]) as grpc.ServiceDefinition<any>;
+      const serviceDef = (grpcObj as any).service as grpc.ServiceDefinition<any>;
 
       this._server.addService(
         serviceDef,
-        _.mapValues(serviceDef, (method, methodName) => {
+        _.mapValues(serviceDef, method => {
+          const methodName = (method as any).originalName;
+
           if (method.requestStream && method.responseStream) {
             return this._makeBidiStreamingHandler(service, methodName);
           } else if (method.requestStream) {
@@ -112,7 +119,17 @@ export class GrpcServer {
           cb(null, res);
         },
         err => {
-          cb(err, null);
+          const error = normalizeError(err, DEFAULT_SERVER_ERROR);
+          const resMetadata = new grpc.Metadata();
+          resMetadata.set(HEADERS.TRAILER_ERROR, JSON.stringify(error));
+
+          const serviceError: grpc.ServiceError = {
+            name: error.code,
+            code: ERROR_CODES_TO_GRPC_STATUS[error.code],
+            message: error.message,
+            metadata: resMetadata,
+          };
+          cb(serviceError, null);
         }
       );
     };
@@ -161,8 +178,18 @@ export class GrpcServer {
           cb(null, res);
         },
         err => {
-          console.log('error case');
-          cb(err, null);
+          const error = normalizeError(err, DEFAULT_SERVER_ERROR);
+          const resMetadata = new grpc.Metadata();
+          resMetadata.set(HEADERS.TRAILER_ERROR, JSON.stringify(error));
+
+          const serviceError: grpc.ServiceError = {
+            name: error.code,
+            code: ERROR_CODES_TO_GRPC_STATUS[error.code],
+            message: error.message,
+            metadata: resMetadata,
+          };
+
+          cb(serviceError, null);
         }
       );
     };

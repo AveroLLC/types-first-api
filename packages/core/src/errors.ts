@@ -14,14 +14,26 @@ export enum ErrorCodes {
 
 export const ERROR_CODES_TO_HTTP_STATUS: Record<ErrorCodes, number> = {
   [ErrorCodes.BadRequest]: 400,
-  [ErrorCodes.NotImplemented]: 501,
   [ErrorCodes.NotAuthenticated]: 401,
   [ErrorCodes.NotAuthorized]: 403,
   [ErrorCodes.NotFound]: 404,
+  [ErrorCodes.ServerError]: 500,
+  [ErrorCodes.NotImplemented]: 501,
   [ErrorCodes.Unavailable]: 0,
   [ErrorCodes.NetworkError]: 0,
-  [ErrorCodes.ServerError]: 500,
   [ErrorCodes.ClientError]: 0,
+};
+
+export const ERROR_CODES_TO_GRPC_STATUS: Record<ErrorCodes, number> = {
+  [ErrorCodes.ClientError]: 1, // TODO: this is probably the wrong error code
+  [ErrorCodes.BadRequest]: 3,
+  [ErrorCodes.NotFound]: 5,
+  [ErrorCodes.NotAuthorized]: 7,
+  [ErrorCodes.NotImplemented]: 12,
+  [ErrorCodes.ServerError]: 13,
+  [ErrorCodes.Unavailable]: 14,
+  [ErrorCodes.NetworkError]: 14,
+  [ErrorCodes.NotAuthenticated]: 16,
 };
 
 export const HEADERS = {
@@ -66,6 +78,6 @@ export function normalizeError(err: any, defaultError: IError): IError {
 
   return {
     ...defaultError,
-    details: `${err}`,
+    details: JSON.stringify(err),
   };
 }

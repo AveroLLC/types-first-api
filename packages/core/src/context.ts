@@ -15,12 +15,12 @@ Context is a container for propagating:
 - Errors?
 */
 
-export class Context<TContext extends Record<string, any> = {}> {
-  private data: TContext = {} as TContext;
+export class Context {
+  private data: Record<string, any> = {};
+  public metadata: Metadata = {};
   private deadline: NodeJS.Timer;
   private _cancel$ = new Subject();
   private _cancelSource$: Observable<any>;
-  public metadata: Metadata = {};
 
   get cancel$() {
     return race(this._cancel$, this._cancelSource$);
@@ -43,12 +43,12 @@ export class Context<TContext extends Record<string, any> = {}> {
     }
   }
 
-  static create = <TContext>(opts?: ContextOpts) => {
-    return new Context<TContext>(opts);
+  static create = (opts?: ContextOpts) => {
+    return new Context(opts);
   };
 
-  static from = <T extends Record<string, any>>(parent: Context<T>): Context<T> => {
-    const child = new Context<T>({ cancel$: parent.cancel$ });
+  static from = (parent: Context): Context => {
+    const child = new Context({ cancel$: parent.cancel$ });
 
     _.each(parent.get(), (v, k) => {
       child.set(k, v);
@@ -57,13 +57,13 @@ export class Context<TContext extends Record<string, any> = {}> {
     return child;
   };
 
-  set = <K extends keyof TContext>(k: K, v: TContext[K]) => {
+  set = (k: string, v: any) => {
     this.data[k] = v;
   };
 
-  get(): TContext;
-  get<K extends keyof TContext>(k: K): TContext[K];
-  get(k?: keyof TContext) {
+  get(): Record<string, any>;
+  get(k: string): any;
+  get(k?: string) {
     return k == null ? this.data : this.data[k];
   }
 

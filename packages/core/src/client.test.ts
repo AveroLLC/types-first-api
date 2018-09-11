@@ -27,26 +27,19 @@ interface TestService {
   concat: Endpoint<ConcatRequest, ConcatResponse>;
 }
 
-interface AppContext {
-  user: {
-    username: string;
-    birthday: Date;
-  };
-}
-
 describe('client', () => {
   const callHandler = jest.fn();
-  class MyClient extends Client<TestService, Context<AppContext>> {
+  class MyClient extends Client<TestService> {
     _call<K extends 'increment' | 'concat'>(
       methodName: K,
       req: Observable<TestService[K]['request']>,
-      ctx: Context<Context<AppContext>>
+      ctx: Context
     ): Observable<TestService[K]['response']> {
       return callHandler(methodName, req, ctx);
     }
   }
   let client: MyClient;
-  let context: Context<AppContext>;
+  let context: Context;
 
   beforeEach(() => {
     callHandler.mockClear();
@@ -58,12 +51,15 @@ describe('client', () => {
       );
     });
     // This is a mock of the pbjs model
-    client = new MyClient({
-      methods: {
-        increment: {},
-        concat: {},
-      },
-    } as any);
+    client = new MyClient(
+      {
+        methods: {
+          increment: {},
+          concat: {},
+        },
+      } as any,
+      ''
+    );
     context = Context.create();
   });
 

@@ -32,22 +32,15 @@ interface TestService {
   concat: Endpoint<ConcatRequest, ConcatResponse>;
 }
 
-interface AppContext {
-  user: {
-    username: string;
-    birthday: Date;
-  };
-}
-
 describe('Server', () => {
-  let s: Service<TestService, AppContext, Dependencies>;
-  let context: Context<AppContext>;
+  let s: Service<TestService, Dependencies>;
+  let context: Context;
   const usersSvc = {
     authenticate: () => of(true).pipe(delay(1000)),
   };
 
   beforeEach(() => {
-    s = new Service<TestService, AppContext, Dependencies>(null, {
+    s = new Service<TestService, Dependencies>(null, {
       usersSvc,
     });
     context = Context.create({});

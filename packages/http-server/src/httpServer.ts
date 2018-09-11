@@ -1,4 +1,4 @@
-import { DEFAULT_SERVER_ERROR } from './../../core/src/errors';
+import { DEFAULT_SERVER_ERROR } from '@types-first-api/core';
 import * as express from 'express';
 import { Server as NodeHttpServer } from 'http';
 import * as _ from 'lodash';

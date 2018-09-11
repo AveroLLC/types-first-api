@@ -2,11 +2,11 @@
   "name": "@types-first-api/grpc-server",
   "version": "0.0.1",
   "description": "Types-First API GRPC server",
-  "main": "dest/index.js",
+  "main": "src/index.ts",
+  "types": "dest/index.d.ts",
   "files": [
     "dest"
   ],
-  "types": "dest/index.d.ts",
   "scripts": {
     "test": "jest",
     "prepare": "tsc"

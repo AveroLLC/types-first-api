@@ -1,18 +1,10 @@
 import { Observable, Subject } from 'rxjs';
 import { Context } from './context';
 
-interface MyContext {
-  date: Date;
-  user: {
-    name: string;
-    id: string;
-  };
-}
-
 describe('context', () => {
-  let context: Context<MyContext>;
+  let context: Context;
   beforeEach(() => {
-    context = Context.create<MyContext>();
+    context = Context.create();
   });
 
   describe('metadata', () => {
@@ -76,7 +68,7 @@ describe('context', () => {
 
     it('should allow a context to receive a cancellation observable and respect it', () => {
       const cancel = new Subject();
-      context = Context.create<MyContext>({ cancel$: cancel });
+      context = Context.create({ cancel$: cancel });
 
       cancel.complete();
 
@@ -85,7 +77,7 @@ describe('context', () => {
 
     it('should still cancel if called directly', () => {
       const cancel = new Subject();
-      context = Context.create<MyContext>({ cancel$: cancel });
+      context = Context.create({ cancel$: cancel });
 
       context.cancel();
 
@@ -94,7 +86,7 @@ describe('context', () => {
 
     it('should not throw if cancelled multiple times', () => {
       const cancel = new Subject();
-      context = Context.create<MyContext>({ cancel$: cancel });
+      context = Context.create({ cancel$: cancel });
 
       context.cancel();
       cancel.complete();
@@ -136,7 +128,7 @@ describe('context', () => {
   describe('deadline', () => {
     const later = () => new Date(Date.now() + 100);
     it('should allow a scheduled cancellation with a deadline', () => {
-      context = Context.create<MyContext>({ deadline: later() });
+      context = Context.create({ deadline: later() });
 
       return context.cancel$.toPromise();
     });

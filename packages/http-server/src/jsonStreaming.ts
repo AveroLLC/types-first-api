@@ -87,7 +87,6 @@ export function writeStreamingJson<T>(data$: Observable<T>): NodeJS.ReadableStre
       outputStream.write(JSON.stringify(data));
     },
     err => {
-      console.log('an error', err);
       outputStream.emit('error', err);
     },
     () => {

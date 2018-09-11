@@ -1,7 +1,7 @@
 {
-  "name": "@types-first-api/http-server",
+  "name": "@types-first-api/grpc-client",
   "version": "0.0.1",
-  "description": "Types-First API Http Server implementation",
+  "description": "Types-First API HTTP client",
   "main": "src/index.ts",
   "types": "dest/index.d.ts",
   "files": [
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@types-first-api/core": "0.0.1",
-    "express": "^4.16.3",
+    "grpc": "^1.14.2",
     "lodash": "^4.17.10",
     "protobufjs": "^6.8.8",
     "rxjs": "^6.3.2"
@@ -21,7 +21,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/express": "^4.16.0",
     "@types/lodash": "^4.14.116"
   }
 }

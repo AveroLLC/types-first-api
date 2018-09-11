@@ -1,0 +1,40 @@
+{
+  "name": "example",
+  "private": true,
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run generate && jest",
+    "generate": "tfapi protos/Service.proto"
+  },
+  "dependencies": {
+    "@types-first-api/cli": "0.0.1",
+    "@types-first-api/core": "0.0.1",
+    "@types-first-api/grpc-client": "0.0.1",
+    "@types-first-api/grpc-server": "0.0.1",
+    "@types-first-api/http-client": "0.0.1",
+    "@types-first-api/http-server": "0.0.1",
+    "rxjs": "^6.3.2"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^23.6.0",
+    "ts-node": "^7.0.1"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
+  }
+}

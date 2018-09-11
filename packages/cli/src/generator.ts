@@ -69,10 +69,10 @@ function initializeClientAndServer(root: pbjs.Root): ts.Statement[] {
       [ts.createToken(ts.SyntaxKind.ExportKeyword)],
       [
         ts.createVariableDeclaration(
-          'clientFactory',
+          'clients',
           null,
           ts.createCall(
-            ts.createPropertyAccess(ts.createIdentifier('tfapi'), 'createClientFactory'),
+            ts.createPropertyAccess(ts.createIdentifier('tfapi'), 'clientFactory'),
             [ts.createTypeReferenceNode(serviceDefinitionsIdentifier, [])],
             [rootIdentifier]
           )
@@ -83,10 +83,10 @@ function initializeClientAndServer(root: pbjs.Root): ts.Statement[] {
       [ts.createToken(ts.SyntaxKind.ExportKeyword)],
       [
         ts.createVariableDeclaration(
-          'serverFactory',
+          'services',
           null,
           ts.createCall(
-            ts.createPropertyAccess(ts.createIdentifier('tfapi'), 'createServerFactory'),
+            ts.createPropertyAccess(ts.createIdentifier('tfapi'), 'serviceFactory'),
             [ts.createTypeReferenceNode(serviceDefinitionsIdentifier, [])],
             [rootIdentifier]
           )
