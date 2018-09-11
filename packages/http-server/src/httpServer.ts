@@ -20,7 +20,7 @@ export class HttpServer {
   private _server = express();
   private _httpServer: NodeHttpServer = null;
 
-  constructor(...services: Service<any, any, any>[]) {
+  constructor(...services: Service<any, any>[]) {
     services.forEach(service => {
       service.getMethodNames().forEach(methodName => {
         this._addEndpoint(service.getName(), methodName as string, service);
@@ -63,7 +63,7 @@ export class HttpServer {
   private _addEndpoint = (
     serviceName: string,
     methodName: string,
-    service: Service<any, any, any>
+    service: Service<any, any>
   ) => {
     this._server.post(`/rpc/${serviceName}/${methodName}`, (req, res) => {
       const request$: Request<any> = parseStreamingJson(req);

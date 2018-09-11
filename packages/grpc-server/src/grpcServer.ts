@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 export class GrpcServer {
   private _server = new grpc.Server();
 
-  constructor(...services: Service<any, any, any>[]) {
+  constructor(...services: Service<any, any>[]) {
     _.forEach(services, service => {
       const { pbjsService } = service;
       const grpcObj = grpc.loadObject(pbjsService);
@@ -67,7 +67,7 @@ export class GrpcServer {
   };
 
   private _makeBidiStreamingHandler = (
-    service: Service<any, any, any>,
+    service: Service<any, any>,
     methodName: string
   ): grpc.handleBidiStreamingCall<any, any> => {
     return (call: grpc.ServerDuplexStream<any, any>) => {
@@ -99,7 +99,7 @@ export class GrpcServer {
   };
 
   private _makeClientStreamingHandler = (
-    service: Service<any, any, any>,
+    service: Service<any, any>,
     methodName: string
   ): grpc.handleClientStreamingCall<any, any> => {
     return (call: grpc.ServerReadableStream<any>, cb: grpc.sendUnaryData<any>) => {
@@ -136,7 +136,7 @@ export class GrpcServer {
   };
 
   private _makeServerStreamingHandler = (
-    service: Service<any, any, any>,
+    service: Service<any, any>,
     methodName: string
   ): grpc.handleServerStreamingCall<any, any> => {
     return (call: grpc.ServerWriteableStream<any>) => {
@@ -162,7 +162,7 @@ export class GrpcServer {
   };
 
   private _makeUnaryHandler = (
-    service: Service<any, any, any>,
+    service: Service<any, any>,
     methodName: string
   ): grpc.handleUnaryCall<any, any> => {
     return (call: grpc.ServerUnaryCall<any>, cb: grpc.sendUnaryData<any>) => {
