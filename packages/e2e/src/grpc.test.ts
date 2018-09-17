@@ -13,11 +13,7 @@ describe('grpc', () => {
     service = services.create('wtf.guys.SchedulingService', {});
     server = new GrpcServer(service);
     await server.bind({ port: 5555 });
-    client = clients.create<{}>(
-      'wtf.guys.SchedulingService',
-      'localhost:5555',
-      GrpcClient
-    );
+    client = clients.create('wtf.guys.SchedulingService', 'localhost:5555', GrpcClient);
   });
 
   afterEach(async () => {
@@ -41,7 +37,19 @@ describe('grpc', () => {
         GrpcClient
       );
 
-      expect(client.rpc.Unary());
+      const response$ = client.rpc.Unary(of({ id: '1' }));
+      return expect(response$.toPromise()).rejects.toEqual({
+        code: 'Network Error',
+        message: 'Connect Failed',
+      });
+    });
+
+    it('should propagate a serialized error from the server', () => {
+      const response$ = client.rpc.Unary(of({ id: '1' }));
+      return expect(response$.toPromise()).rejects.toEqual({
+        code: 'Not Implemented',
+        message: "RPC Method 'Unary' is not implemented.",
+      });
     });
   });
 });

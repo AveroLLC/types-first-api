@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": false,
+    "declaration": true,
+    "outDir": "dest"
+  },
+  "files": ["src/index.ts"],
+  "exclude": ["node_modules"]
+}

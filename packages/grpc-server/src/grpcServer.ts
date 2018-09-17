@@ -5,9 +5,9 @@ import {
   Context,
   normalizeError,
   HEADERS,
-  ERROR_CODES_TO_GRPC_STATUS,
   DEFAULT_SERVER_ERROR,
 } from '@types-first-api/core';
+import { ERROR_CODES_TO_GRPC_STATUS } from '@types-first-api/grpc-common';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
 

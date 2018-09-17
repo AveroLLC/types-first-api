@@ -1,7 +1,7 @@
 {
-  "name": "@types-first-api/grpc-server",
+  "name": "@types-first-api/grpc-common",
   "version": "0.0.1",
-  "description": "Types-First API GRPC server",
+  "description": "Types-First API common code for grpc client and server",
   "main": "src/index.ts",
   "types": "dest/index.d.ts",
   "files": [
@@ -15,14 +15,13 @@
   "license": "ISC",
   "dependencies": {
     "@types-first-api/core": "0.0.1",
-    "@types-first-api/grpc-common": "0.0.1",
     "grpc": "^1.15.1",
-    "lodash": "^4.17.10",
-    "protobufjs": "^6.8.8",
-    "rxjs": "^6.3.2"
+    "lodash": "^4.17.11"
+  },
+  "peerDependencies": {
+    "grpc": "^1.15.1"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.116",
-    "@types/protobufjs": "^6.0.0"
+    "@types/lodash": "^4.14.116"
   }
 }

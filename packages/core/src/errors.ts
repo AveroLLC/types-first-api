@@ -1,4 +1,5 @@
 import { isString, isError } from 'util';
+import * as _ from 'lodash';
 
 export enum ErrorCodes {
   BadRequest = 'Bad Request',
@@ -22,18 +23,6 @@ export const ERROR_CODES_TO_HTTP_STATUS: Record<ErrorCodes, number> = {
   [ErrorCodes.Unavailable]: 0,
   [ErrorCodes.NetworkError]: 0,
   [ErrorCodes.ClientError]: 0,
-};
-
-export const ERROR_CODES_TO_GRPC_STATUS: Record<ErrorCodes, number> = {
-  [ErrorCodes.ClientError]: 1, // TODO: this is probably the wrong error code
-  [ErrorCodes.BadRequest]: 3,
-  [ErrorCodes.NotFound]: 5,
-  [ErrorCodes.NotAuthorized]: 7,
-  [ErrorCodes.NotImplemented]: 12,
-  [ErrorCodes.ServerError]: 13,
-  [ErrorCodes.Unavailable]: 14,
-  [ErrorCodes.NetworkError]: 14,
-  [ErrorCodes.NotAuthenticated]: 16,
 };
 
 export const HEADERS = {

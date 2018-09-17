@@ -59,7 +59,7 @@ export class Service<
   private _notImplemented = (methodName: keyof TService) => () => {
     const err: IError = {
       code: ErrorCodes.NotImplemented,
-      message: `RPC Method ${methodName} is not implemented`,
+      message: `RPC Method '${methodName}' is not implemented.`,
     };
     return throwError(err);
   };
