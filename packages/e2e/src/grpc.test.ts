@@ -1,3 +1,4 @@
+import { mergeMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { services, clients, wtf } from '../generated/Service';
 import { GrpcClient } from '@types-first-api/grpc-client';
@@ -44,7 +45,21 @@ describe('grpc', () => {
       });
     });
 
-    it('should propagate a serialized error from the server', () => {
+    ['Unary', 'ClientStream', 'ServerStream', 'BidiStream'].forEach(methodName => {
+      it(`should propagate a serialized error from the server for ${methodName}`, () => {
+        const response$ = client.rpc[methodName](of({ id: '1' }));
+        return expect(response$.toPromise()).rejects.toEqual({
+          code: 'Not Implemented',
+          message: `RPC Method '${methodName}' is not implemented.`,
+        });
+      });
+    });
+
+    it('should propagate errors from upstream client calls', () => {
+      service.registerServiceHandler('Unary', req$ => {
+        return client.rpc.ServerStream(req$);
+      });
+
       const response$ = client.rpc.Unary(of({ id: '1' }));
       return expect(response$.toPromise()).rejects.toEqual({
         code: 'Not Implemented',

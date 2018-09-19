@@ -62,76 +62,14 @@ export class GrpcServer {
     });
   };
 
-  private _grpcMetadataToMetadata = (md: grpc.Metadata): Metadata => {
-    return _.mapValues(md.getMap(), v => v.toString());
-  };
-
-  private _makeBidiStreamingHandler = (
+  private _makeUnaryHandler = (
     service: Service<any, any>,
     methodName: string
-  ): grpc.handleBidiStreamingCall<any, any> => {
-    return (call: grpc.ServerDuplexStream<any, any>) => {
-      //@ts-ignore
-      const metadata = this._grpcMetadataToMetadata(call.metadata);
-      const request$ = new Observable(observer => {
-        call.on('data', d => observer.next(d));
-        call.on('end', () => observer.complete());
-        call.on('error', e => observer.error(e));
-      });
-
-      const ctx = Context.create({
-        metadata,
-      });
-      const response$ = service.call(methodName, request$, ctx);
-
-      response$.subscribe(
-        res => {
-          call.write(res);
-        },
-        err => {
-          call.destroy(err);
-        },
-        () => {
-          call.end();
-        }
-      );
-    };
-  };
-
-  private _makeClientStreamingHandler = (
-    service: Service<any, any>,
-    methodName: string
-  ): grpc.handleClientStreamingCall<any, any> => {
-    return (call: grpc.ServerReadableStream<any>, cb: grpc.sendUnaryData<any>) => {
-      const metadata = this._grpcMetadataToMetadata(call.metadata);
-      const request$ = new Observable(observer => {
-        call.on('data', d => observer.next(d));
-        call.on('end', () => observer.complete());
-        call.on('error', e => observer.error(e));
-      });
-      const ctx = Context.create({
-        metadata,
-      });
-      const response$ = service.call(methodName, request$, ctx);
-
-      response$.subscribe(
-        res => {
-          cb(null, res);
-        },
-        err => {
-          const error = normalizeError(err, DEFAULT_SERVER_ERROR);
-          const resMetadata = new grpc.Metadata();
-          resMetadata.set(HEADERS.TRAILER_ERROR, JSON.stringify(error));
-
-          const serviceError: grpc.ServiceError = {
-            name: error.code,
-            code: ERROR_CODES_TO_GRPC_STATUS[error.code],
-            message: error.message,
-            metadata: resMetadata,
-          };
-          cb(serviceError, null);
-        }
-      );
+  ): grpc.handleUnaryCall<any, any> => {
+    return (call: grpc.ServerUnaryCall<any>, cb: grpc.sendUnaryData<any>) => {
+      const { request$, context } = this._handleUnaryRequest(call);
+      const response$ = service.call(methodName, request$, context);
+      this._handleUnaryResponse(response$, cb);
     };
   };
 
@@ -140,58 +78,113 @@ export class GrpcServer {
     methodName: string
   ): grpc.handleServerStreamingCall<any, any> => {
     return (call: grpc.ServerWriteableStream<any>) => {
-      const metadata = this._grpcMetadataToMetadata(call.metadata);
-      const request$ = of(call.request);
-      const ctx = Context.create({
-        metadata,
-      });
-      const response$ = service.call(methodName, request$, ctx);
-
-      response$.subscribe(
-        res => {
-          call.write(res);
-        },
-        err => {
-          call.destroy(err);
-        },
-        () => {
-          call.end();
-        }
-      );
+      const { request$, context } = this._handleUnaryRequest(call);
+      const response$ = service.call(methodName, request$, context);
+      this._handleStreamingResponse(response$, call);
     };
   };
 
-  private _makeUnaryHandler = (
+  private _makeClientStreamingHandler = (
     service: Service<any, any>,
     methodName: string
-  ): grpc.handleUnaryCall<any, any> => {
-    return (call: grpc.ServerUnaryCall<any>, cb: grpc.sendUnaryData<any>) => {
-      const metadata = this._grpcMetadataToMetadata(call.metadata);
-      const request$ = of(call.request);
-      const ctx = Context.create({
-        metadata,
-      });
-      const response$ = service.call(methodName, request$, ctx);
-
-      response$.subscribe(
-        res => {
-          cb(null, res);
-        },
-        err => {
-          const error = normalizeError(err, DEFAULT_SERVER_ERROR);
-          const resMetadata = new grpc.Metadata();
-          resMetadata.set(HEADERS.TRAILER_ERROR, JSON.stringify(error));
-
-          const serviceError: grpc.ServiceError = {
-            name: error.code,
-            code: ERROR_CODES_TO_GRPC_STATUS[error.code],
-            message: error.message,
-            metadata: resMetadata,
-          };
-
-          cb(serviceError, null);
-        }
-      );
+  ): grpc.handleClientStreamingCall<any, any> => {
+    return (call: grpc.ServerReadableStream<any>, cb: grpc.sendUnaryData<any>) => {
+      const { request$, context } = this._handleStreamingRequest(call);
+      const response$ = service.call(methodName, request$, context);
+      this._handleUnaryResponse(response$, cb);
     };
+  };
+
+  private _makeBidiStreamingHandler = (
+    service: Service<any, any>,
+    methodName: string
+  ): grpc.handleBidiStreamingCall<any, any> => {
+    return (call: grpc.ServerDuplexStream<any, any>) => {
+      const { request$, context } = this._handleStreamingRequest(call);
+      const response$ = service.call(methodName, request$, context);
+      this._handleStreamingResponse(response$, call);
+    };
+  };
+
+  private _grpcMetadataToMetadata = (md: grpc.Metadata): Metadata => {
+    return _.mapValues(md.getMap(), v => v.toString());
+  };
+
+  private _normalizeError = (err: any): grpc.ServiceError => {
+    const error = normalizeError(err, DEFAULT_SERVER_ERROR);
+    const resMetadata = new grpc.Metadata();
+    resMetadata.set(HEADERS.TRAILER_ERROR, JSON.stringify(error));
+
+    return {
+      name: error.code,
+      code: ERROR_CODES_TO_GRPC_STATUS[error.code],
+      message: error.message,
+      metadata: resMetadata,
+    };
+  };
+
+  private _handleUnaryRequest = (
+    call: grpc.ServerUnaryCall<any> | grpc.ServerWriteableStream<any>
+  ) => {
+    const metadata = this._grpcMetadataToMetadata(call.metadata);
+    const request$ = of(call.request);
+    const context = Context.create({
+      metadata,
+    });
+
+    return {
+      request$,
+      context,
+    };
+  };
+
+  private _handleStreamingRequest = (
+    call: grpc.ServerReadableStream<any> | grpc.ServerDuplexStream<any, any>
+  ) => {
+    const metadata = this._grpcMetadataToMetadata(call.metadata);
+    const request$ = new Observable(observer => {
+      call.on('data', d => observer.next(d));
+      call.on('end', () => observer.complete());
+      call.on('error', e => observer.error(e));
+    });
+
+    const context = Context.create({
+      metadata,
+    });
+
+    return { request$, context };
+  };
+
+  private _handleUnaryResponse = (
+    response$: Observable<any>,
+    cb: grpc.sendUnaryData<any>
+  ) => {
+    response$.subscribe(
+      res => {
+        cb(null, res);
+      },
+      err => {
+        const serviceError = this._normalizeError(err);
+        cb(serviceError, null);
+      }
+    );
+  };
+
+  private _handleStreamingResponse = (
+    response$: Observable<any>,
+    call: grpc.ServerWriteableStream<any> | grpc.ServerDuplexStream<any, any>
+  ) => {
+    response$.subscribe(
+      res => {
+        call.write(res);
+      },
+      err => {
+        const serviceError = this._normalizeError(err);
+        call.emit('error', serviceError);
+      },
+      () => {
+        call.end();
+      }
+    );
   };
 }
