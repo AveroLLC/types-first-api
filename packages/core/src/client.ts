@@ -60,6 +60,10 @@ export abstract class Client<TService extends GRPCService<TService>> {
     this._middleware.push(middleware);
   };
 
+  getName = () => {
+    return this.pbjsService.fullName.slice(1);
+  };
+
   private invokeCall = <K extends keyof TService>(
     methodName: K,
     request$: Request<TService[K]['request']>,
@@ -83,7 +87,14 @@ export abstract class Client<TService extends GRPCService<TService>> {
 
     // Will always throw a structured error
     return response$.pipe(
-      catchError(err => throwError(normalizeError(err, DEFAULT_CLIENT_ERROR)))
+      catchError(err =>
+        throwError(
+          normalizeError(err, {
+            ...DEFAULT_CLIENT_ERROR,
+            source: this.getName(),
+          })
+        )
+      )
     );
   };
 }

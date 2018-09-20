@@ -33,17 +33,18 @@ export const HEADERS = {
 export interface IError {
   code: ErrorCodes;
   message: string;
+  source: string;
   details?: string;
   stackTrace?: string;
   upstream?: IError;
 }
 
-export const DEFAULT_SERVER_ERROR: IError = {
+export const DEFAULT_SERVER_ERROR = {
   code: ErrorCodes.ServerError,
   message: 'Something went wrong while processing the request',
 };
 
-export const DEFAULT_CLIENT_ERROR: IError = {
+export const DEFAULT_CLIENT_ERROR = {
   code: ErrorCodes.ClientError,
   message: 'Something went wrong while preparing the request',
 };

@@ -7,6 +7,8 @@ import {
   Context,
   HEADERS,
   DEFAULT_CLIENT_ERROR,
+  IError,
+  ErrorCodes,
 } from '@types-first-api/core';
 import { normalizeGrpcError } from '@types-first-api/grpc-common';
 import * as pbjs from 'protobufjs';
@@ -83,6 +85,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
     call.on('data', d => {
       response$.next(d);
     });
+
     // errors are dealt with in the status handler
     call.on('error', _.noop);
     call.on('status', (status: grpc.StatusObject) => {
@@ -90,17 +93,15 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
         return response$.complete();
       }
       const serializedError = status.metadata.get(HEADERS.TRAILER_ERROR);
-      let err;
+      let err: IError;
       if (serializedError != null && serializedError.length > 0) {
         try {
           err = JSON.parse(serializedError[0].toString());
         } catch (e) {}
+      } else {
+        err = normalizeGrpcError(status, DEFAULT_CLIENT_ERROR);
       }
-      if (err == null) {
-        err = status;
-      }
-      const normalzedError = normalizeGrpcError(err, DEFAULT_CLIENT_ERROR);
-      response$.error(normalzedError);
+      response$.error(err);
     });
 
     return response$.asObservable();

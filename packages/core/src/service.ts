@@ -60,6 +60,7 @@ export class Service<
     const err: IError = {
       code: ErrorCodes.NotImplemented,
       message: `RPC Method '${methodName}' is not implemented.`,
+      source: this.getName(),
     };
     return throwError(err);
   };
@@ -104,7 +105,14 @@ export class Service<
 
     // Will always throw a structured error
     return response$.pipe(
-      catchError(err => throwError(normalizeError(err, DEFAULT_SERVER_ERROR)))
+      catchError(err =>
+        throwError(
+          normalizeError(err, {
+            ...DEFAULT_SERVER_ERROR,
+            source: this.getName(),
+          })
+        )
+      )
     );
   };
 
