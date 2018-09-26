@@ -1,5 +1,6 @@
+import { ErrorCodes } from './../../core/src/errors';
 import { mergeMap } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { of, NEVER } from 'rxjs';
 import { services, clients, wtf } from '../generated/Service';
 import { GrpcClient } from '@types-first-api/grpc-client';
 import { GrpcServer } from '@types-first-api/grpc-server';
@@ -69,4 +70,23 @@ describe('grpc', () => {
       });
     });
   });
+
+  describe('cancelation', () => {
+    it.only('shhould allow cancellation of a request', () => {
+      service.registerServiceHandler('Unary', () => {
+        return NEVER;
+      });
+
+      const ctx = Context.create();
+      const response$ = client.rpc.Unary(of({ id: '1' }));
+
+      ctx.cancel();
+
+      expect(response$.toPromise()).rejects.toMatchObject({
+        code: ErrorCodes.BadRequest,
+      });
+    });
+  });
+
+  describe('deadlines', () => {});
 });
