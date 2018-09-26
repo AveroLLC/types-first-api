@@ -69,7 +69,7 @@ export class GrpcServer {
     return (call: grpc.ServerUnaryCall<any>, cb: grpc.sendUnaryData<any>) => {
       const { request$, context } = this._handleUnaryRequest(call);
       const response$ = service.call(methodName, request$, context);
-      this._handleUnaryResponse(response$, cb);
+      this._handleUnaryResponse(response$, cb, service.getName());
     };
   };
 
@@ -80,7 +80,7 @@ export class GrpcServer {
     return (call: grpc.ServerWriteableStream<any>) => {
       const { request$, context } = this._handleUnaryRequest(call);
       const response$ = service.call(methodName, request$, context);
-      this._handleStreamingResponse(response$, call);
+      this._handleStreamingResponse(response$, call, service.getName());
     };
   };
 
@@ -91,7 +91,7 @@ export class GrpcServer {
     return (call: grpc.ServerReadableStream<any>, cb: grpc.sendUnaryData<any>) => {
       const { request$, context } = this._handleStreamingRequest(call);
       const response$ = service.call(methodName, request$, context);
-      this._handleUnaryResponse(response$, cb);
+      this._handleUnaryResponse(response$, cb, service.getName());
     };
   };
 
@@ -102,7 +102,7 @@ export class GrpcServer {
     return (call: grpc.ServerDuplexStream<any, any>) => {
       const { request$, context } = this._handleStreamingRequest(call);
       const response$ = service.call(methodName, request$, context);
-      this._handleStreamingResponse(response$, call);
+      this._handleStreamingResponse(response$, call, service.getName());
     };
   };
 
@@ -110,8 +110,8 @@ export class GrpcServer {
     return _.mapValues(md.getMap(), v => v.toString());
   };
 
-  private _normalizeError = (err: any): grpc.ServiceError => {
-    const error = normalizeError(err, DEFAULT_SERVER_ERROR);
+  private _normalizeError = (err: any, serviceName: string): grpc.ServiceError => {
+    const error = normalizeError(err, { ...DEFAULT_SERVER_ERROR, source: serviceName });
     const resMetadata = new grpc.Metadata();
     resMetadata.set(HEADERS.TRAILER_ERROR, JSON.stringify(error));
 
@@ -157,14 +157,15 @@ export class GrpcServer {
 
   private _handleUnaryResponse = (
     response$: Observable<any>,
-    cb: grpc.sendUnaryData<any>
+    cb: grpc.sendUnaryData<any>,
+    serviceName: string
   ) => {
     response$.subscribe(
       res => {
         cb(null, res);
       },
       err => {
-        const serviceError = this._normalizeError(err);
+        const serviceError = this._normalizeError(err, serviceName);
         cb(serviceError, null);
       }
     );
@@ -172,14 +173,15 @@ export class GrpcServer {
 
   private _handleStreamingResponse = (
     response$: Observable<any>,
-    call: grpc.ServerWriteableStream<any> | grpc.ServerDuplexStream<any, any>
+    call: grpc.ServerWriteableStream<any> | grpc.ServerDuplexStream<any, any>,
+    serviceName: string
   ) => {
     response$.subscribe(
       res => {
         call.write(res);
       },
       err => {
-        const serviceError = this._normalizeError(err);
+        const serviceError = this._normalizeError(err, serviceName);
         call.emit('error', serviceError);
       },
       () => {

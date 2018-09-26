@@ -89,7 +89,10 @@ export class HttpServer {
           res.write(JSON.stringify(data));
         },
         err => {
-          const error = normalizeError(err, DEFAULT_SERVER_ERROR);
+          const error = normalizeError(err, {
+            ...DEFAULT_SERVER_ERROR,
+            source: serviceName,
+          });
           const status = ERROR_CODES_TO_HTTP_STATUS[error.code];
 
           if (res.headersSent) {

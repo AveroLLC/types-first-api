@@ -99,7 +99,8 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
           err = JSON.parse(serializedError[0].toString());
         } catch (e) {}
       } else {
-        err = normalizeGrpcError(status, DEFAULT_CLIENT_ERROR);
+        // TODO: what is the source for client errors?
+        err = normalizeGrpcError(status, { ...DEFAULT_CLIENT_ERROR, source: 'client' });
       }
       response$.error(err);
     });

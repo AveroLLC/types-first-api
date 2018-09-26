@@ -36,7 +36,6 @@ export interface IError {
   source: string;
   details?: string;
   stackTrace?: string;
-  upstream?: IError;
 }
 
 export const DEFAULT_SERVER_ERROR = {

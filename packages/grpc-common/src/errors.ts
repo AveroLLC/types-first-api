@@ -34,6 +34,7 @@ export function normalizeGrpcError(err, defaultError: IError): IError {
     return {
       code,
       message: err.details || defaultError.message,
+      source: defaultError.source,
     };
   }
 

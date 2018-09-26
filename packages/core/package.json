@@ -3,13 +3,11 @@
   "version": "0.0.1",
   "description": "Types-First API Core",
   "main": "src/index.ts",
-  "types": "dest/index.d.ts",
   "files": [
-    "dest"
+    "src"
   ],
   "scripts": {
-    "test": "jest",
-    "prepare": "tsc"
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",

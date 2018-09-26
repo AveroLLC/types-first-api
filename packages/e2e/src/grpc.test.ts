@@ -39,7 +39,7 @@ describe('grpc', () => {
       );
 
       const response$ = client.rpc.Unary(of({ id: '1' }));
-      return expect(response$.toPromise()).rejects.toEqual({
+      return expect(response$.toPromise()).rejects.toMatchObject({
         code: 'Network Error',
         message: 'Connect Failed',
       });
@@ -48,9 +48,10 @@ describe('grpc', () => {
     ['Unary', 'ClientStream', 'ServerStream', 'BidiStream'].forEach(methodName => {
       it(`should propagate a serialized error from the server for ${methodName}`, () => {
         const response$ = client.rpc[methodName](of({ id: '1' }));
-        return expect(response$.toPromise()).rejects.toEqual({
+        return expect(response$.toPromise()).rejects.toMatchObject({
           code: 'Not Implemented',
           message: `RPC Method '${methodName}' is not implemented.`,
+          source: 'wtf.guys.SchedulingService',
         });
       });
     });
@@ -61,9 +62,10 @@ describe('grpc', () => {
       });
 
       const response$ = client.rpc.Unary(of({ id: '1' }));
-      return expect(response$.toPromise()).rejects.toEqual({
+      return expect(response$.toPromise()).rejects.toMatchObject({
         code: 'Not Implemented',
-        message: "RPC Method 'Unary' is not implemented.",
+        message: "RPC Method 'ServerStream' is not implemented.",
+        source: 'wtf.guys.SchedulingService',
       });
     });
   });
