@@ -6,6 +6,8 @@ import { GrpcClient } from '@types-first-api/grpc-client';
 import { GrpcServer } from '@types-first-api/grpc-server';
 import { Service, Client, Context } from '@types-first-api/core';
 
+const later = () => new Date(Date.now() + 100);
+
 describe('grpc', () => {
   let service: Service<wtf.guys.SchedulingService>;
   let server: GrpcServer;
@@ -71,22 +73,67 @@ describe('grpc', () => {
     });
   });
 
-  describe('cancelation', () => {
-    it.only('should allow cancellation of a request', () => {
+  describe('cancellation', () => {
+    it('should allow cancellation of a request fast', () => {
       service.registerServiceHandler('Unary', () => {
         return NEVER;
       });
 
       const ctx = Context.create();
-      const response$ = client.rpc.Unary(of({ id: '1' }));
-
       ctx.cancel();
 
+      const response$ = client.rpc.Unary(of({ id: '1' }), ctx);
+
       return expect(response$.toPromise()).rejects.toMatchObject({
-        code: ErrorCodes.BadRequest,
+        code: ErrorCodes.Cancelled,
+      });
+    });
+
+    it('should allow cancellation of a request later', () => {
+      service.registerServiceHandler('Unary', () => {
+        return NEVER;
+      });
+
+      const ctx = Context.create({ deadline: later() });
+      const response$ = client.rpc.Unary(of({ id: '1' }), ctx);
+
+      return expect(response$.toPromise()).rejects.toMatchObject({
+        code: ErrorCodes.Cancelled,
+      });
+    });
+
+    it('should propagate cancellation to the server', () => {
+      let serverContext: Context;
+      service.registerServiceHandler('Unary', (req$, ctx) => {
+        serverContext = ctx;
+        return NEVER;
+      });
+
+      const ctx = Context.create();
+      const res$ = client.rpc.Unary(of({ id: '1' }), ctx);
+
+      setTimeout(ctx.cancel, 100);
+
+      return res$.toPromise().catch(() => {
+        return serverContext.cancel$.toPromise();
       });
     });
   });
 
-  describe('deadlines', () => {});
+  describe('deadlines', () => {
+    it.only('should propagate cancellation to the server', () => {
+      let serverContext: Context;
+      service.registerServiceHandler('Unary', (req$, ctx) => {
+        serverContext = ctx;
+        return NEVER;
+      });
+
+      const ctx = Context.create({ deadline: later() });
+      const res$ = client.rpc.Unary(of({ id: '1' }), ctx);
+
+      return res$.toPromise().catch(() => {
+        return serverContext.cancel$.toPromise();
+      });
+    });
+  });
 });

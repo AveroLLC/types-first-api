@@ -4,6 +4,14 @@ import { take, tap, mapTo } from 'rxjs/operators';
 
 const later = () => new Date(Date.now() + 100);
 
+function isPending(p: Promise<any>): Promise<boolean> {
+  let uniq = Symbol();
+
+  return Promise.race([p, Promise.resolve(uniq)]).then(v => {
+    return v === uniq;
+  });
+}
+
 describe('context', () => {
   let context: Context;
   beforeEach(() => {
@@ -87,6 +95,10 @@ describe('context', () => {
       expect(context.cancel$).toBeInstanceOf(Observable);
     });
 
+    it('should not consider the cancel$ observable complete if context has not been cancelled', () => {
+      expect(isPending(context.cancel$.toPromise())).resolves.toEqual(true);
+    });
+
     it('should emit & close when cancelled', () => {
       context.cancel();
 
@@ -160,9 +172,7 @@ describe('context', () => {
 
       c2.cancel();
 
-      return c2.cancel$.toPromise().then(() => {
-        console.log(c1.cancel$.toPromise());
-      });
+      return expect(isPending(c1.cancel$.toPromise())).resolves.toEqual(true);
     });
 
     it('should propagate deadlines', () => {

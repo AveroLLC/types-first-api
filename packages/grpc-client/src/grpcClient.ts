@@ -14,7 +14,7 @@ import { normalizeGrpcError } from '@types-first-api/grpc-common';
 import * as pbjs from 'protobufjs';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
-import { take, tap, finalize } from 'rxjs/operators';
+import { take, tap, finalize, takeUntil, materialize } from 'rxjs/operators';
 
 export class GrpcClient<TService extends GRPCService<TService>> extends Client<TService> {
   private _client: grpc.Client;
@@ -48,14 +48,13 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       grpcMetadata.set(k, v);
     });
 
-    // TODO: deal with deadlines
     // @ts-ignore - typings on call options are wrong
     const grpcOpts: grpc.CallOptions = {
       propagate_flags: grpc.propagate.DEFAULTS,
     };
-    // if (ctx.deadline != null) {
-    //   grpcOpts.deadline = options.deadline.valueOf();
-    // }
+    if (ctx.deadline != null) {
+      grpcOpts.deadline = ctx.deadline;
+    }
 
     const call = this._client.makeBidiStreamRequest(
       path,
@@ -65,29 +64,28 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       grpcOpts
     );
 
-    // TODO: clean up when res is done
-    const cancelListener = ctx.cancel$.pipe(
-      finalize(() => {
-        console.log('cancel is emitted');
-        call.cancel();
-      })
+    const reqSubscription = request$.subscribe(
+      val => {
+        call.write(val);
+      },
+      err => {
+        call.emit('error', err);
+      },
+      () => {
+        call.end();
+      }
     );
 
-    const requestListener = request$.pipe(
-      tap(
-        val => {
-          call.write(val);
-        },
-        err => {
-          call.emit('error', err);
-        },
-        () => {
-          call.end();
-        }
-      )
-    );
-
-    race(cancelListener, requestListener).subscribe();
+    const cancelSubscription = ctx.cancel$.subscribe(null, null, () => {
+      const cancelError: IError = {
+        code: ErrorCodes.Cancelled,
+        message: 'Call was canceled by the client',
+        source: 'client',
+      };
+      response$.error(cancelError);
+      call.cancel();
+      reqSubscription.unsubscribe();
+    });
 
     call.on('data', d => {
       response$.next(d);
@@ -96,6 +94,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
     // errors are dealt with in the status handler
     call.on('error', _.noop);
     call.on('status', (status: grpc.StatusObject) => {
+      cancelSubscription.unsubscribe();
       if (status.code === grpc.status.OK) {
         return response$.complete();
       }

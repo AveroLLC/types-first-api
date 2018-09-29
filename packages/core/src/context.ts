@@ -17,7 +17,7 @@ Context is a container for propagating:
 export class Context {
   private data: Record<string, any> = {};
   public metadata: Metadata = {};
-  private deadline: Date;
+  deadline: Date;
   private timer: NodeJS.Timer;
   private _cancel$ = new Subject();
   private _parentCancel$: Observable<{}>;

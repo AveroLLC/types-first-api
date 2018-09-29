@@ -132,6 +132,12 @@ export class GrpcServer {
       metadata,
     });
 
+    //@ts-ignore types for grpc node suck
+    call.on('cancelled', () => {
+      console.log('call cancelled');
+      context.cancel();
+    });
+
     return {
       request$,
       context,
@@ -142,14 +148,16 @@ export class GrpcServer {
     call: grpc.ServerReadableStream<any> | grpc.ServerDuplexStream<any, any>
   ) => {
     const metadata = this._grpcMetadataToMetadata(call.metadata);
+    const context = Context.create({
+      metadata,
+    });
+    call.on('cancelled', () => {
+      context.cancel();
+    });
     const request$ = new Observable(observer => {
       call.on('data', d => observer.next(d));
       call.on('end', () => observer.complete());
       call.on('error', e => observer.error(e));
-    });
-
-    const context = Context.create({
-      metadata,
     });
 
     return { request$, context };
