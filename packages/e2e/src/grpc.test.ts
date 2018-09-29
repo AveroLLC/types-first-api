@@ -1,5 +1,5 @@
 import { ErrorCodes } from './../../core/src/errors';
-import { mergeMap } from 'rxjs/operators';
+import { mergeMap, take } from 'rxjs/operators';
 import { of, NEVER } from 'rxjs';
 import { services, clients, wtf } from '../generated/Service';
 import { GrpcClient } from '@types-first-api/grpc-client';
@@ -115,7 +115,7 @@ describe('grpc', () => {
       setTimeout(ctx.cancel, 100);
 
       return res$.toPromise().catch(() => {
-        return serverContext.cancel$.toPromise();
+        return serverContext.cancel$.pipe(take(1)).toPromise();
       });
     });
   });
@@ -132,7 +132,7 @@ describe('grpc', () => {
       const res$ = client.rpc.Unary(of({ id: '1' }), ctx);
 
       return res$.toPromise().catch(() => {
-        return serverContext.cancel$.toPromise();
+        return expect(serverContext.cancel$.pipe(take(1)).toPromise());
       });
     });
   });

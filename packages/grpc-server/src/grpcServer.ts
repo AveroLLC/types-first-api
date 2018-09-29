@@ -133,8 +133,8 @@ export class GrpcServer {
     });
 
     //@ts-ignore types for grpc node suck
-    call.on('cancelled', () => {
-      console.log('call cancelled');
+    call.on('cancelled', e => {
+      console.log('cancel', e);
       context.cancel();
     });
 

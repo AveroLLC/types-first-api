@@ -76,13 +76,8 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       }
     );
 
-    const cancelSubscription = ctx.cancel$.subscribe(null, null, () => {
-      const cancelError: IError = {
-        code: ErrorCodes.Cancelled,
-        message: 'Call was canceled by the client',
-        source: 'client',
-      };
-      response$.error(cancelError);
+    const cancelSubscription = ctx.cancel$.pipe(take(1)).subscribe(err => {
+      response$.error(err);
       call.cancel();
       reqSubscription.unsubscribe();
     });

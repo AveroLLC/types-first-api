@@ -83,8 +83,7 @@ export class Context {
 
   cancel = (err?: Partial<IError>) => {
     clearTimeout(this.timer);
-    console.log('emitting error');
-    this._cancel$.next({ ...CANCELLATION_ERROR, ...err });
-    this._cancel$.complete();
+    const error = { ...CANCELLATION_ERROR, ...err };
+    this._cancel$.next(error);
   };
 }

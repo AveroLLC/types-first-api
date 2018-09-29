@@ -1,6 +1,6 @@
 import { Observable, Subject, race, interval, NEVER } from 'rxjs';
 import { Context } from './context';
-import { take, tap, mapTo } from 'rxjs/operators';
+import { take, tap, mapTo, last, toArray } from 'rxjs/operators';
 import { ErrorCodes } from './errors';
 
 const later = () => new Date(Date.now() + 100);
@@ -105,10 +105,10 @@ describe('context', () => {
       return expect(isPending(emitted)).resolves.toEqual(true);
     });
 
-    it.only('should emit an error & close when cancelled', () => {
+    it('should emit an error & close when cancelled', () => {
       context.cancel();
 
-      return expect(context.cancel$.toPromise()).resolves.toMatchObject({
+      return expect(context.cancel$.pipe(take(1)).toPromise()).resolves.toMatchObject({
         code: ErrorCodes.Cancelled,
         message: 'Request cancelled by the client.',
       });
@@ -120,23 +120,7 @@ describe('context', () => {
       context.cancel();
       context.cancel();
 
-      return context.cancel$.toPromise();
-    });
-
-    it('should should not propagate cancellation upstream', () => {
-      const c2 = Context.from(context);
-
-      let isComplete = false;
-      context.cancel$.toPromise().then(() => {
-        isComplete = true;
-      });
-
-      c2.cancel();
-
-      return new Promise((resolve, reject) => {
-        expect(isComplete).toBe(false);
-        resolve();
-      });
+      return context.cancel$.pipe(take(1)).toPromise();
     });
   });
 
@@ -144,7 +128,9 @@ describe('context', () => {
     it('should allow a scheduled cancellation with a deadline', () => {
       context = Context.create({ deadline: later() });
 
-      return context.cancel$.toPromise();
+      return expect(context.cancel$.pipe(take(1)).toPromise()).resolves.toMatchObject({
+        code: ErrorCodes.Cancelled,
+      });
     });
   });
 
@@ -172,7 +158,7 @@ describe('context', () => {
 
       c1.cancel();
 
-      return c2.cancel$.toPromise();
+      return c2.cancel$.pipe(take(1)).toPromise();
     });
 
     it('should not propagate cancellation from downstream contexts', () => {
@@ -181,7 +167,9 @@ describe('context', () => {
 
       c2.cancel();
 
-      return expect(isPending(c1.cancel$.toPromise())).resolves.toEqual(true);
+      return expect(isPending(c1.cancel$.pipe(take(1)).toPromise())).resolves.toEqual(
+        true
+      );
     });
 
     it('should propagate deadlines', () => {
@@ -191,7 +179,7 @@ describe('context', () => {
 
       const c2 = Context.from(c1);
 
-      return c2.cancel$.toPromise();
+      return c2.cancel$.pipe(take(1)).toPromise();
     });
   });
 });
