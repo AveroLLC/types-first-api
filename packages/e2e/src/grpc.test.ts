@@ -72,7 +72,7 @@ describe('grpc', () => {
   });
 
   describe('cancelation', () => {
-    it.only('shhould allow cancellation of a request', () => {
+    it.only('should allow cancellation of a request', () => {
       service.registerServiceHandler('Unary', () => {
         return NEVER;
       });
@@ -82,7 +82,7 @@ describe('grpc', () => {
 
       ctx.cancel();
 
-      expect(response$.toPromise()).rejects.toMatchObject({
+      return expect(response$.toPromise()).rejects.toMatchObject({
         code: ErrorCodes.BadRequest,
       });
     });

@@ -5,7 +5,6 @@ import { Metadata } from './interfaces';
 export interface ContextOpts {
   metadata?: Metadata;
   deadline?: Date;
-  cancel$?: Observable<any>;
 }
 
 /*
@@ -18,28 +17,26 @@ Context is a container for propagating:
 export class Context {
   private data: Record<string, any> = {};
   public metadata: Metadata = {};
-  private deadline: NodeJS.Timer;
+  private deadline: Date;
+  private timer: NodeJS.Timer;
   private _cancel$ = new Subject();
-  private _cancelSource$: Observable<any>;
+  private _parentCancel$: Observable<{}>;
 
   get cancel$() {
-    return race(this._cancel$, this._cancelSource$);
+    return race(this._cancel$, this._parentCancel$);
   }
 
   private constructor(opts?: ContextOpts) {
     if (opts && opts.deadline) {
+      this.deadline = opts.deadline;
       const dt = opts.deadline.getTime() - Date.now();
       if (dt > 0) {
-        this.deadline = setTimeout(this.cancel, dt);
+        this.timer = setTimeout(this.cancel, dt);
       }
     }
 
-    if (opts && opts.cancel$) {
-      this._cancelSource$ = opts.cancel$;
-    }
-
     if (opts && opts.metadata) {
-      this.metadata = opts.metadata;
+      this.metadata = _.cloneDeep(opts.metadata);
     }
   }
 
@@ -47,8 +44,11 @@ export class Context {
     return new Context(opts);
   };
 
+  // TODO: chain data, deadline & cancelation
   static from = (parent: Context): Context => {
-    const child = new Context({ cancel$: parent.cancel$ });
+    const child = new Context({ deadline: parent.deadline });
+
+    child._parentCancel$ = parent.cancel$;
 
     _.each(parent.get(), (v, k) => {
       child.set(k, v);
@@ -68,7 +68,7 @@ export class Context {
   }
 
   cancel = () => {
-    clearTimeout(this.deadline);
+    clearTimeout(this.timer);
     this._cancel$.complete();
   };
 }

@@ -1,5 +1,8 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, race, interval, NEVER } from 'rxjs';
 import { Context } from './context';
+import { take, tap, mapTo } from 'rxjs/operators';
+
+const later = () => new Date(Date.now() + 100);
 
 describe('context', () => {
   let context: Context;
@@ -19,7 +22,31 @@ describe('context', () => {
       };
 
       context = Context.create({ metadata: md });
-      expect(context.metadata).toBe(md);
+      expect(context.metadata).toEqual(md);
+    });
+
+    it('should make a copy of the metdata', () => {
+      const md = {
+        hello: 'world',
+        what: 'is up',
+      };
+
+      context = Context.create({ metadata: md });
+
+      md.hello = 'hiii';
+      expect(context.metadata.hello).toEqual('world');
+    });
+
+    it('should allow manipulation of context metadata', () => {
+      const md = {
+        hello: 'world',
+        what: 'is up',
+      };
+
+      context = Context.create({ metadata: md });
+
+      context.metadata.hello = 'hiii';
+      expect(context.metadata.hello).toEqual('hiii');
     });
   });
 
@@ -66,46 +93,13 @@ describe('context', () => {
       return context.cancel$.toPromise();
     });
 
-    it('should allow a context to receive a cancellation observable and respect it', () => {
-      const cancel = new Subject();
-      context = Context.create({ cancel$: cancel });
-
-      cancel.complete();
-
-      return context.cancel$.toPromise();
-    });
-
-    it('should still cancel if called directly', () => {
-      const cancel = new Subject();
-      context = Context.create({ cancel$: cancel });
-
-      context.cancel();
-
-      return context.cancel$.toPromise();
-    });
-
     it('should not throw if cancelled multiple times', () => {
-      const cancel = new Subject();
-      context = Context.create({ cancel$: cancel });
+      context = Context.create();
 
       context.cancel();
-      cancel.complete();
       context.cancel();
 
       return context.cancel$.toPromise();
-    });
-
-    it('should propagate cancelation downstream from chained contexts', () => {
-      const c2 = Context.from(context);
-      const c3 = Context.from(c2);
-
-      context.cancel();
-
-      return Promise.all([
-        context.cancel$.toPromise(),
-        c2.cancel$.toPromise(),
-        c3.cancel$.toPromise(),
-      ]);
     });
 
     it('should should not propagate cancellation upstream', () => {
@@ -126,11 +120,59 @@ describe('context', () => {
   });
 
   describe('deadline', () => {
-    const later = () => new Date(Date.now() + 100);
     it('should allow a scheduled cancellation with a deadline', () => {
       context = Context.create({ deadline: later() });
 
       return context.cancel$.toPromise();
+    });
+  });
+
+  describe('chaining', () => {
+    it('should not propagate metadata', () => {
+      const c1 = Context.create({
+        metadata: { hello: 'world' },
+      });
+      const c2 = Context.from(c1);
+
+      expect(c2.metadata).toEqual({});
+    });
+
+    it('should propagate data', () => {
+      const c1 = Context.create();
+      c1.set('hello', 'world');
+      const c2 = Context.from(c1);
+
+      expect(c2.get('hello')).toEqual('world');
+    });
+
+    it('should propagate cancellation from upstream contexts', () => {
+      const c1 = Context.create();
+      const c2 = Context.from(c1);
+
+      c1.cancel();
+
+      return c2.cancel$.toPromise();
+    });
+
+    it('should not propagate cancellation from downstream contexts', () => {
+      const c1 = Context.create();
+      const c2 = Context.from(c1);
+
+      c2.cancel();
+
+      return c2.cancel$.toPromise().then(() => {
+        console.log(c1.cancel$.toPromise());
+      });
+    });
+
+    it('should propagate deadlines', () => {
+      const c1 = Context.create({
+        deadline: later(),
+      });
+
+      const c2 = Context.from(c1);
+
+      return c2.cancel$.toPromise();
     });
   });
 });

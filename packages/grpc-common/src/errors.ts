@@ -3,6 +3,7 @@ import * as grpc from 'grpc';
 import * as _ from 'lodash';
 
 export const ERROR_CODES_TO_GRPC_STATUS: Record<ErrorCodes, grpc.status> = {
+  [ErrorCodes.Cancelled]: grpc.status.CANCELLED,
   [ErrorCodes.ClientError]: 1, // TODO: this is probably the wrong error code
   [ErrorCodes.BadRequest]: grpc.status.INVALID_ARGUMENT,
   [ErrorCodes.NotFound]: grpc.status.NOT_FOUND,

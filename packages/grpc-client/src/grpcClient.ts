@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { Subject, race } from 'rxjs';
 import {
   Client,
   GRPCService,
@@ -14,7 +14,7 @@ import { normalizeGrpcError } from '@types-first-api/grpc-common';
 import * as pbjs from 'protobufjs';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
-import { take } from 'rxjs/operators';
+import { take, tap, finalize } from 'rxjs/operators';
 
 export class GrpcClient<TService extends GRPCService<TService>> extends Client<TService> {
   private _client: grpc.Client;
@@ -66,21 +66,28 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
     );
 
     // TODO: clean up when res is done
-    ctx.cancel$.pipe(take(1)).subscribe(() => {
-      call.cancel();
-    });
-
-    request$.subscribe(
-      val => {
-        call.write(val);
-      },
-      err => {
-        call.emit('error', err);
-      },
-      () => {
-        call.end();
-      }
+    const cancelListener = ctx.cancel$.pipe(
+      finalize(() => {
+        console.log('cancel is emitted');
+        call.cancel();
+      })
     );
+
+    const requestListener = request$.pipe(
+      tap(
+        val => {
+          call.write(val);
+        },
+        err => {
+          call.emit('error', err);
+        },
+        () => {
+          call.end();
+        }
+      )
+    );
+
+    race(cancelListener, requestListener).subscribe();
 
     call.on('data', d => {
       response$.next(d);

@@ -2,6 +2,7 @@ import { isString, isError } from 'util';
 import * as _ from 'lodash';
 
 export enum ErrorCodes {
+  Cancelled = 'Cancelled',
   BadRequest = 'Bad Request',
   NotImplemented = 'Not Implemented',
   NotAuthenticated = 'Not Authenticated',
@@ -23,6 +24,7 @@ export const ERROR_CODES_TO_HTTP_STATUS: Record<ErrorCodes, number> = {
   [ErrorCodes.Unavailable]: 0,
   [ErrorCodes.NetworkError]: 0,
   [ErrorCodes.ClientError]: 0,
+  [ErrorCodes.Cancelled]: 0,
 };
 
 export const HEADERS = {
