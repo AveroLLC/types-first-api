@@ -1,6 +1,8 @@
-import { Subject, race, Observable } from 'rxjs';
+import { Subject, race, Observable, BehaviorSubject } from 'rxjs';
 import * as _ from 'lodash';
 import { Metadata } from './interfaces';
+import { IError, ErrorCodes } from './errors';
+import { filter } from 'rxjs/operators';
 
 export interface ContextOpts {
   metadata?: Metadata;
@@ -14,16 +16,22 @@ Context is a container for propagating:
 - Errors?
 */
 
+const CANCELLATION_ERROR = {
+  code: ErrorCodes.Cancelled,
+  message: 'Request cancelled by the client.',
+  source: 'client',
+};
+
 export class Context {
   private data: Record<string, any> = {};
   public metadata: Metadata = {};
   deadline: Date;
   private timer: NodeJS.Timer;
-  private _cancel$ = new Subject();
-  private _parentCancel$: Observable<{}>;
+  private _cancel$ = new BehaviorSubject<IError>(null);
+  private _parentCancel$: Observable<IError>;
 
   get cancel$() {
-    return race(this._cancel$, this._parentCancel$);
+    return race(this._cancel$.pipe(filter(v => v != null)), this._parentCancel$);
   }
 
   private constructor(opts?: ContextOpts) {
@@ -31,7 +39,13 @@ export class Context {
       this.deadline = opts.deadline;
       const dt = opts.deadline.getTime() - Date.now();
       if (dt > 0) {
-        this.timer = setTimeout(this.cancel, dt);
+        this.timer = setTimeout(() => {
+          this.cancel({
+            code: ErrorCodes.Cancelled,
+            message: `Request exceeded deadline ${this.deadline.toISOString()}`,
+            source: 'client',
+          });
+        }, dt);
       }
     }
 
@@ -67,8 +81,10 @@ export class Context {
     return k == null ? this.data : this.data[k];
   }
 
-  cancel = () => {
+  cancel = (err?: Partial<IError>) => {
     clearTimeout(this.timer);
+    console.log('emitting error');
+    this._cancel$.next({ ...CANCELLATION_ERROR, ...err });
     this._cancel$.complete();
   };
 }

@@ -1,6 +1,7 @@
 import { Observable, Subject, race, interval, NEVER } from 'rxjs';
 import { Context } from './context';
 import { take, tap, mapTo } from 'rxjs/operators';
+import { ErrorCodes } from './errors';
 
 const later = () => new Date(Date.now() + 100);
 
@@ -96,13 +97,21 @@ describe('context', () => {
     });
 
     it('should not consider the cancel$ observable complete if context has not been cancelled', () => {
-      expect(isPending(context.cancel$.toPromise())).resolves.toEqual(true);
+      return expect(isPending(context.cancel$.toPromise())).resolves.toEqual(true);
     });
 
-    it('should emit & close when cancelled', () => {
+    it('should not emit a value if it has not been cancelled', () => {
+      const emitted = context.cancel$.pipe(take(1)).toPromise();
+      return expect(isPending(emitted)).resolves.toEqual(true);
+    });
+
+    it.only('should emit an error & close when cancelled', () => {
       context.cancel();
 
-      return context.cancel$.toPromise();
+      return expect(context.cancel$.toPromise()).resolves.toMatchObject({
+        code: ErrorCodes.Cancelled,
+        message: 'Request cancelled by the client.',
+      });
     });
 
     it('should not throw if cancelled multiple times', () => {
