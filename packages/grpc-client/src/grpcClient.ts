@@ -54,6 +54,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
     };
     if (ctx.deadline != null) {
       grpcOpts.deadline = ctx.deadline;
+      grpcMetadata.add(HEADERS.DEADLINE, ctx.deadline.toISOString());
     }
 
     const call = this._client.makeBidiStreamRequest(

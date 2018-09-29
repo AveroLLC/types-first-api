@@ -126,15 +126,26 @@ export class GrpcServer {
   private _handleUnaryRequest = (
     call: grpc.ServerUnaryCall<any> | grpc.ServerWriteableStream<any>
   ) => {
+    console.log(call);
     const metadata = this._grpcMetadataToMetadata(call.metadata);
+    const serializedDeadline = metadata[HEADERS.DEADLINE];
+    let deadline = null;
+    if (serializedDeadline != null) {
+      delete metadata[HEADERS.DEADLINE];
+      try {
+        deadline = new Date(serializedDeadline);
+      } catch (e) {}
+    }
     const request$ = of(call.request);
     const context = Context.create({
       metadata,
+      deadline,
     });
 
+    // TODO: is there a way to get the deadline off of the call / request?
+
     //@ts-ignore types for grpc node suck
-    call.on('cancelled', e => {
-      console.log('cancel', e);
+    call.on('cancelled', () => {
       context.cancel();
     });
 

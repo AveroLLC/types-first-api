@@ -121,18 +121,24 @@ describe('grpc', () => {
   });
 
   describe('deadlines', () => {
-    it.only('should propagate cancellation to the server', () => {
+    it('should propagate cancellation to the server', () => {
       let serverContext: Context;
       service.registerServiceHandler('Unary', (req$, ctx) => {
         serverContext = ctx;
         return NEVER;
       });
 
-      const ctx = Context.create({ deadline: later() });
+      const deadline = later();
+      const ctx = Context.create({ deadline });
       const res$ = client.rpc.Unary(of({ id: '1' }), ctx);
 
       return res$.toPromise().catch(() => {
-        return expect(serverContext.cancel$.pipe(take(1)).toPromise());
+        return expect(
+          serverContext.cancel$.pipe(take(1)).toPromise()
+        ).resolves.toMatchObject({
+          code: ErrorCodes.Cancelled,
+          message: `Request exceeded deadline ${deadline.toISOString()}`,
+        });
       });
     });
   });

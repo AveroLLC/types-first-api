@@ -30,6 +30,7 @@ export const ERROR_CODES_TO_HTTP_STATUS: Record<ErrorCodes, number> = {
 export const HEADERS = {
   TRAILER_STATUS: 'x-grpc-status',
   TRAILER_ERROR: 'x-grpc-serialized-error',
+  DEADLINE: 'x-grpc-deadline',
 };
 
 export interface IError {
