@@ -15,7 +15,7 @@
     "prepare": "tsc"
   },
   "dependencies": {
-    "@types-first-api/core": "0.0.1",
+    "@types-first-api/core": "^0.0.1",
     "express": "^4.16.3",
     "lodash": "^4.17.10",
     "protobufjs": "^6.8.8",

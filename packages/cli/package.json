@@ -18,7 +18,7 @@
     "tfapi": "dest/index.js"
   },
   "dependencies": {
-    "@types-first-api/core": "0.0.1",
+    "@types-first-api/core": "^0.0.1",
     "lodash": "^4.17.10",
     "protobufjs": "^6.8.8",
     "typescript": "^3.0.3"
