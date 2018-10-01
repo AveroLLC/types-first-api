@@ -1,7 +1,7 @@
 import { Endpoint } from './interfaces';
 import { Service, Handler } from './service';
-import { of, defer, throwError, Observable } from 'rxjs';
-import { map, delay, mergeMap, tap, finalize } from 'rxjs/operators';
+import { of, throwError, Observable, zip } from 'rxjs';
+import { map, delay, mergeMap, finalize } from 'rxjs/operators'
 import { Context } from './context';
 import { ErrorCodes, IError, DEFAULT_SERVER_ERROR } from './errors';
 
@@ -114,7 +114,7 @@ describe('Service', () => {
     });
 
     describe('handlers', () => {
-      it('sould invoke the registered handler', () => {
+      it('should invoke the registered handler', () => {
         s.registerServiceHandler('increment', (req, ctx) => {
           return req.pipe(
             map(d => {
@@ -143,6 +143,34 @@ describe('Service', () => {
           expect(args[2]).toEqual({ usersSvc });
         });
       });
+
+      it('should register a map of service handlers', () => {
+        const expectedIncrementResult = { val: 12 };
+        const increment = jest.fn((req, ctx) => {
+          return of(expectedIncrementResult);
+        });
+
+        const expectedConcatResult = { val: "Hello World" };
+        const concat = jest.fn((req, ctx) => {
+          return  of(expectedConcatResult);
+        });
+        s.registerServiceHandlers({
+          increment: increment,
+          concat: concat
+        });
+
+        const incrementReq$ = s.call('increment', of({ val: 10, add: 2 }), context);
+        const concatReq$ = s.call('concat', of({val: "Hello ", add: "World"}), context);
+
+        return zip(incrementReq$, concatReq$).toPromise()
+          .then(([incrementRes, concatRes]) => {
+            expect(increment).toHaveBeenCalledTimes(1);
+            expect(concat).toHaveBeenCalledTimes(1);
+            expect(incrementRes).toEqual(expectedIncrementResult);
+            expect(concatRes).toEqual(expectedConcatResult);
+          });
+      });
+
     });
 
     describe('middleware', () => {
