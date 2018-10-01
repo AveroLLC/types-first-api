@@ -15,5 +15,6 @@
     "prepare": "tsc"
   },
   "author": "",
-  "license": "ISC"
+  "license": "Apache-2.0",
+  "gitHead": "5c6292c8d70109ac8c3de61d558f6b036f1798a5"
 }

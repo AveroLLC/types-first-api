@@ -22,9 +22,10 @@
     "rxjs": "^6.3.2"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/express": "^4.16.0",
     "@types/lodash": "^4.14.116"
-  }
+  },
+  "gitHead": "5c6292c8d70109ac8c3de61d558f6b036f1798a5"
 }

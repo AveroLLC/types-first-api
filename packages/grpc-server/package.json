@@ -15,7 +15,7 @@
     "prepare": "tsc"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
     "@types-first-api/core": "^0.0.1",
     "@types-first-api/grpc-common": "^0.0.1",
@@ -27,5 +27,6 @@
   "devDependencies": {
     "@types/lodash": "^4.14.116",
     "@types/protobufjs": "^6.0.0"
-  }
+  },
+  "gitHead": "5c6292c8d70109ac8c3de61d558f6b036f1798a5"
 }
