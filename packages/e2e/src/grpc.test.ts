@@ -142,4 +142,23 @@ describe('grpc', () => {
       });
     });
   });
+
+  describe('metadata', () => {
+    it('should send context metadata from client to server', () => {
+      let serverContext: Context;
+      service.registerServiceHandler('Unary', (req$, ctx) => {
+        serverContext = ctx;
+        return req$;
+      });
+
+      const ctx = Context.create({ metadata: { hello: 'world' } });
+      const res$ = client.rpc.Unary(of({ id: '1' }), ctx);
+
+      return res$.toPromise().then(() => {
+        return expect(serverContext.metadata).toMatchObject({
+          hello: 'world',
+        });
+      });
+    });
+  });
 });

@@ -32,7 +32,7 @@ interface TestService {
   concat: Endpoint<ConcatRequest, ConcatResponse>;
 }
 
-describe('Server', () => {
+describe('Service', () => {
   let s: Service<TestService, Dependencies>;
   let context: Context;
   const usersSvc = {
@@ -40,9 +40,18 @@ describe('Server', () => {
   };
 
   beforeEach(() => {
-    s = new Service<TestService, Dependencies>(null, {
-      usersSvc,
-    });
+    s = new Service<TestService, Dependencies>(
+      {
+        methods: {
+          increment: {},
+          concat: {},
+        },
+        fullName: '',
+      } as any,
+      {
+        usersSvc,
+      }
+    );
     context = Context.create({});
   });
 

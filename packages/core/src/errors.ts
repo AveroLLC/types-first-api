@@ -36,7 +36,7 @@ export const HEADERS = {
 export interface IError {
   code: ErrorCodes;
   message: string;
-  source: string;
+  source?: string;
   details?: string;
   stackTrace?: string;
 }

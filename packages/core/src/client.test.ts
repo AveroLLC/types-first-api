@@ -57,6 +57,7 @@ describe('client', () => {
           increment: {},
           concat: {},
         },
+        fullName: '',
       } as any,
       ''
     );
