@@ -1,10 +1,9 @@
-import { ErrorCodes } from './../../core/src/errors';
 import { mergeMap, take } from 'rxjs/operators';
 import { of, NEVER } from 'rxjs';
 import { services, clients, wtf } from '../generated/Service';
 import { GrpcClient } from '@types-first-api/grpc-client';
 import { GrpcServer } from '@types-first-api/grpc-server';
-import { Service, Client, Context } from '@types-first-api/core';
+import { Service, Client, Context, ErrorCodes } from '@types-first-api/core';
 
 const later = () => new Date(Date.now() + 100);
 

@@ -2,6 +2,9 @@
   "name": "@types-first-api/core",
   "version": "0.0.1",
   "description": "Types-First API Core",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "src/index.ts",
   "files": [
     "src"

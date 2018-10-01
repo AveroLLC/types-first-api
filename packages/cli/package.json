@@ -2,6 +2,9 @@
   "name": "@types-first-api/cli",
   "version": "0.0.1",
   "description": "Types-First API CLI tool",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "src/index.ts",
   "types": "dest/index.d.ts",
   "files": [
