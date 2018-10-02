@@ -1,1 +1,1 @@
-export const id = 7;
+export * from './httpClient';

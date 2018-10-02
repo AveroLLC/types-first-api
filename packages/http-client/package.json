@@ -16,5 +16,8 @@
   },
   "author": "",
   "license": "Apache-2.0",
-  "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac"
+  "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac",
+  "dependencies": {
+    "cross-fetch": "^2.2.2"
+  }
 }

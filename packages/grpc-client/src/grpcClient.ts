@@ -1,20 +1,19 @@
-import { Subject, race } from 'rxjs';
 import {
   Client,
+  Context,
+  DEFAULT_CLIENT_ERROR,
   GRPCService,
+  HEADERS,
+  IError,
   Request,
   Response,
-  Context,
-  HEADERS,
-  DEFAULT_CLIENT_ERROR,
-  IError,
-  ErrorCodes,
 } from '@types-first-api/core';
 import { normalizeGrpcError } from '@types-first-api/grpc-common';
-import * as pbjs from 'protobufjs';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
-import { take, tap, finalize, takeUntil, materialize } from 'rxjs/operators';
+import * as pbjs from 'protobufjs';
+import { Subject } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 export class GrpcClient<TService extends GRPCService<TService>> extends Client<TService> {
   private _client: grpc.Client;
