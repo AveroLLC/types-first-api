@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/http-client",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Types-First API HTTP client",
   "publishConfig": {
     "access": "public"
