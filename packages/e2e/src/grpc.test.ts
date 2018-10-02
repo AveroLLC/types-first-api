@@ -1,9 +1,9 @@
-import { mergeMap, take } from 'rxjs/operators';
-import { of, NEVER } from 'rxjs';
-import { services, clients, wtf } from '../generated/Service';
+import { Client, Context, ErrorCodes, Service } from '@types-first-api/core';
 import { GrpcClient } from '@types-first-api/grpc-client';
 import { GrpcServer } from '@types-first-api/grpc-server';
-import { Service, Client, Context, ErrorCodes } from '@types-first-api/core';
+import { NEVER, of } from 'rxjs';
+import { take } from 'rxjs/operators';
+import { clients, services, wtf } from '../generated/Service';
 
 const later = () => new Date(Date.now() + 100);
 

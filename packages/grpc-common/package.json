@@ -5,12 +5,14 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "src/index.ts",
+  "main": "dest/index.js",
+  "types": "dest/index.d.ts",
   "files": [
-    "src"
+    "dest"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepare": "tsc"
   },
   "author": "",
   "license": "Apache-2.0",
