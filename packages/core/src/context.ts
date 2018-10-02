@@ -1,4 +1,4 @@
-import { Subject, race, Observable, BehaviorSubject } from 'rxjs';
+import { race, Observable, BehaviorSubject, NEVER } from 'rxjs'
 import * as _ from 'lodash';
 import { Metadata } from './interfaces';
 import { IError, ErrorCodes } from './errors';
@@ -28,7 +28,7 @@ export class Context {
   deadline: Date;
   private timer: NodeJS.Timer;
   private _cancel$ = new BehaviorSubject<IError>(null);
-  private _parentCancel$: Observable<IError>;
+  private _parentCancel$: Observable<IError> = NEVER;
 
   get cancel$() {
     return race(this._cancel$.pipe(filter(v => v != null)), this._parentCancel$);
