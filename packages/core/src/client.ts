@@ -44,7 +44,7 @@ export abstract class Client<TService extends GRPCService<TService>> {
           if (ctx == null) {
             ctx = Context.create();
           }
-          return this.invokeCall(methodName, req, ctx);
+          return this.invokeCall(methodName as keyof TService, req, ctx);
         };
       }
     ) as RpcCallMap<TService>;
