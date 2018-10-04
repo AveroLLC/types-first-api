@@ -1,4 +1,4 @@
-import { Client, Context, ErrorCodes, Service } from '@types-first-api/core';
+import { Client, Context, StatusCodes, Service } from '@types-first-api/core';
 import { GrpcClient } from '@types-first-api/grpc-client';
 import { GrpcServer } from '@types-first-api/grpc-server';
 import { NEVER, of } from 'rxjs';
@@ -16,7 +16,11 @@ describe('grpc', () => {
     service = services.create('wtf.guys.SchedulingService', {});
     server = new GrpcServer(service);
     await server.bind({ port: 5555 });
-    client = clients.create('wtf.guys.SchedulingService', 'localhost:5555', GrpcClient);
+    client = clients.create(
+      'wtf.guys.SchedulingService',
+      { host: 'localhost', port: 5555 },
+      GrpcClient
+    );
   });
 
   afterEach(async () => {
@@ -36,13 +40,13 @@ describe('grpc', () => {
     it('should return an error if given a bad connection string', () => {
       client = clients.create(
         'wtf.guys.SchedulingService',
-        'localhost:12345',
+        { host: 'localhost', port: 12345 },
         GrpcClient
       );
 
       const response$ = client.rpc.Unary(of({ id: '1' }));
       return expect(response$.toPromise()).rejects.toMatchObject({
-        code: 'Network Error',
+        code: StatusCodes.Unavailable,
         message: 'Connect Failed',
       });
     });
@@ -84,7 +88,7 @@ describe('grpc', () => {
       const response$ = client.rpc.Unary(of({ id: '1' }), ctx);
 
       return expect(response$.toPromise()).rejects.toMatchObject({
-        code: ErrorCodes.Cancelled,
+        code: StatusCodes.Cancelled,
       });
     });
 
@@ -97,7 +101,7 @@ describe('grpc', () => {
       const response$ = client.rpc.Unary(of({ id: '1' }), ctx);
 
       return expect(response$.toPromise()).rejects.toMatchObject({
-        code: ErrorCodes.Cancelled,
+        code: StatusCodes.Cancelled,
       });
     });
 
@@ -135,7 +139,7 @@ describe('grpc', () => {
         return expect(
           serverContext.cancel$.pipe(take(1)).toPromise()
         ).resolves.toMatchObject({
-          code: ErrorCodes.Cancelled,
+          code: StatusCodes.Cancelled,
           message: `Request exceeded deadline ${deadline.toISOString()}`,
         });
       });

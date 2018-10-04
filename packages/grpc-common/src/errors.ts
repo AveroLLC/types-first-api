@@ -1,24 +1,42 @@
-import { ErrorCodes, IError, normalizeError } from '@types-first-api/core';
+import { StatusCodes, IError, createError } from '@types-first-api/core';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
 
-export const ERROR_CODES_TO_GRPC_STATUS: Record<ErrorCodes, grpc.status> = {
-  [ErrorCodes.Cancelled]: grpc.status.CANCELLED,
-  [ErrorCodes.ClientError]: 1, // TODO: this is probably the wrong error code
-  [ErrorCodes.BadRequest]: grpc.status.INVALID_ARGUMENT,
-  [ErrorCodes.NotFound]: grpc.status.NOT_FOUND,
-  [ErrorCodes.NotAuthorized]: grpc.status.PERMISSION_DENIED,
-  [ErrorCodes.NotImplemented]: grpc.status.UNIMPLEMENTED,
-  [ErrorCodes.ServerError]: grpc.status.INTERNAL,
-  [ErrorCodes.Unavailable]: grpc.status.UNAVAILABLE,
-  [ErrorCodes.NetworkError]: grpc.status.UNAVAILABLE,
-  [ErrorCodes.NotAuthenticated]: grpc.status.UNAUTHENTICATED,
+export const ERROR_CODES_TO_GRPC_STATUS: Record<StatusCodes, grpc.status> = {
+  [StatusCodes.Ok]: grpc.status.OK,
+  [StatusCodes.Cancelled]: grpc.status.CANCELLED,
+  [StatusCodes.Deadline]: grpc.status.DEADLINE_EXCEEDED,
+  [StatusCodes.RateLimit]: grpc.status.RESOURCE_EXHAUSTED,
+  [StatusCodes.ClientError]: grpc.status.UNAVAILABLE,
+  [StatusCodes.BadRequest]: grpc.status.INVALID_ARGUMENT,
+  [StatusCodes.NotFound]: grpc.status.NOT_FOUND,
+  [StatusCodes.NotAuthorized]: grpc.status.PERMISSION_DENIED,
+  [StatusCodes.NotImplemented]: grpc.status.UNIMPLEMENTED,
+  [StatusCodes.ServerError]: grpc.status.INTERNAL,
+  [StatusCodes.Unavailable]: grpc.status.UNAVAILABLE,
+  [StatusCodes.NetworkError]: grpc.status.UNAVAILABLE,
+  [StatusCodes.NotAuthenticated]: grpc.status.UNAUTHENTICATED,
 };
 
-const GRPC_STATUS_TO_ERROR_CODES = _.invert(ERROR_CODES_TO_GRPC_STATUS) as Record<
-  grpc.status,
-  ErrorCodes
->;
+const GRPC_STATUS_TO_ERROR_CODES: Record<grpc.status, StatusCodes> = {
+  [grpc.status.OK]: StatusCodes.Ok,
+  [grpc.status.CANCELLED]: StatusCodes.Cancelled,
+  [grpc.status.UNKNOWN]: StatusCodes.NetworkError,
+  [grpc.status.INVALID_ARGUMENT]: StatusCodes.BadRequest,
+  [grpc.status.DEADLINE_EXCEEDED]: StatusCodes.Deadline,
+  [grpc.status.NOT_FOUND]: StatusCodes.NotFound,
+  [grpc.status.ALREADY_EXISTS]: StatusCodes.BadRequest,
+  [grpc.status.PERMISSION_DENIED]: StatusCodes.NotAuthorized,
+  [grpc.status.RESOURCE_EXHAUSTED]: StatusCodes.RateLimit,
+  [grpc.status.FAILED_PRECONDITION]: StatusCodes.ServerError,
+  [grpc.status.ABORTED]: StatusCodes.ServerError,
+  [grpc.status.OUT_OF_RANGE]: StatusCodes.ServerError,
+  [grpc.status.UNIMPLEMENTED]: StatusCodes.NotImplemented,
+  [grpc.status.INTERNAL]: StatusCodes.ServerError,
+  [grpc.status.UNAVAILABLE]: StatusCodes.Unavailable,
+  [grpc.status.DATA_LOSS]: StatusCodes.NetworkError,
+  [grpc.status.UNAUTHENTICATED]: StatusCodes.NotAuthenticated,
+};
 
 function isGrpcStatus(s: any): s is grpc.StatusObject {
   return (
@@ -32,12 +50,12 @@ export function normalizeGrpcError(err, defaultError: IError): IError {
   if (isGrpcStatus(err)) {
     const code = GRPC_STATUS_TO_ERROR_CODES[err.code] || defaultError.code;
 
-    return {
+    const error: IError = {
       code,
       message: err.details || defaultError.message,
-      source: defaultError.source,
     };
+    err = error;
   }
 
-  return normalizeError(err, defaultError);
+  return createError(err, defaultError);
 }

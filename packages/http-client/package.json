@@ -5,7 +5,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "src/index.ts",
+  "main": "dest/index.js",
   "types": "dest/index.d.ts",
   "files": [
     "dest"
@@ -18,6 +18,11 @@
   "license": "Apache-2.0",
   "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac",
   "dependencies": {
-    "cross-fetch": "^2.2.2"
+    "@types-first-api/core": "^0.0.3",
+    "@types-first-api/http-common": "^0.0.3",
+    "cross-fetch": "^2.2.2",
+    "lodash": "^4.17.10",
+    "protobufjs": "^6.8.8",
+    "rxjs": "^6.3.3"
   }
 }

@@ -1,7 +1,7 @@
-import { race, Observable, BehaviorSubject, NEVER } from 'rxjs'
+import { race, Observable, BehaviorSubject, NEVER } from 'rxjs';
 import * as _ from 'lodash';
 import { Metadata } from './interfaces';
-import { IError, ErrorCodes } from './errors';
+import { IError, StatusCodes } from './errors';
 import { filter } from 'rxjs/operators';
 
 export interface ContextOpts {
@@ -17,9 +17,8 @@ Context is a container for propagating:
 */
 
 const CANCELLATION_ERROR = {
-  code: ErrorCodes.Cancelled,
+  code: StatusCodes.Cancelled,
   message: 'Request cancelled by the client.',
-  source: 'client',
 };
 
 export class Context {
@@ -41,9 +40,8 @@ export class Context {
       if (dt > 0) {
         this.timer = setTimeout(() => {
           this.cancel({
-            code: ErrorCodes.Cancelled,
+            code: StatusCodes.Cancelled,
             message: `Request exceeded deadline ${this.deadline.toISOString()}`,
-            source: 'client',
           });
         }, dt);
       }

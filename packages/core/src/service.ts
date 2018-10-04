@@ -3,7 +3,7 @@ import * as pbjs from 'protobufjs';
 import { defer, Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Context } from './context';
-import { DEFAULT_SERVER_ERROR, ErrorCodes, IError, normalizeError } from './errors';
+import { DEFAULT_SERVER_ERROR, StatusCodes, IError, createError } from './errors';
 import { GRPCService, Request, Response } from './interfaces';
 
 export interface Handler<TReq, TRes, TDependencies extends object = {}> {
@@ -58,9 +58,8 @@ export class Service<
 
   private _notImplemented = (methodName: keyof TService) => () => {
     const err: IError = {
-      code: ErrorCodes.NotImplemented,
+      code: StatusCodes.NotImplemented,
       message: `RPC Method '${methodName}' is not implemented.`,
-      source: this.getName(),
     };
     return throwError(err);
   };
@@ -107,9 +106,8 @@ export class Service<
     return response$.pipe(
       catchError(err =>
         throwError(
-          normalizeError(err, {
+          createError(err, {
             ...DEFAULT_SERVER_ERROR,
-            source: this.getName(),
           })
         )
       )

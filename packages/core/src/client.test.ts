@@ -1,4 +1,4 @@
-import { DEFAULT_CLIENT_ERROR, ErrorCodes } from './errors';
+import { DEFAULT_CLIENT_ERROR, StatusCodes } from './errors';
 import { Client, ClientMiddleware } from './client';
 import { Endpoint, Request } from './interfaces';
 import { Context } from './context';
@@ -59,7 +59,7 @@ describe('client', () => {
         },
         fullName: '',
       } as any,
-      ''
+      { host: '', port: 1 }
     );
     context = Context.create();
   });
@@ -104,7 +104,7 @@ describe('client', () => {
       const res$ = client.rpc.concat(req$, context);
 
       return expect(res$.toPromise()).rejects.toMatchObject({
-        code: ErrorCodes.ClientError,
+        code: StatusCodes.ClientError,
         message: 'UH OH!',
       });
     });

@@ -1,5 +1,6 @@
 import {
   Client,
+  ClientAddress,
   Context,
   DEFAULT_CLIENT_ERROR,
   GRPCService,
@@ -19,7 +20,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
   private _client: grpc.Client;
   private methods: Record<keyof TService, grpc.MethodDefinition<any, any>>;
 
-  constructor(protoService: pbjs.Service, address: string) {
+  constructor(protoService: pbjs.Service, address: ClientAddress) {
     super(protoService, address);
     const GrpcClient = grpc.loadObject(protoService) as typeof grpc.Client;
     const serviceDef = (GrpcClient as any).service as grpc.ServiceDefinition<any>;
@@ -31,7 +32,8 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       },
       {}
     ) as Record<keyof TService, grpc.MethodDefinition<any, any>>;
-    this._client = new GrpcClient(address, grpc.credentials.createInsecure());
+    const addressString = `${address.host}:${address.port}`;
+    this._client = new GrpcClient(addressString, grpc.credentials.createInsecure());
   }
 
   _call<K extends keyof TService>(
@@ -101,7 +103,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
         } catch (e) {}
       } else {
         // TODO: what is the source for client errors?
-        err = normalizeGrpcError(status, { ...DEFAULT_CLIENT_ERROR, source: 'client' });
+        err = normalizeGrpcError(status, { ...DEFAULT_CLIENT_ERROR });
       }
       response$.error(err);
     });

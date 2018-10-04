@@ -1,5 +1,5 @@
 import { GRPCServiceMap } from './interfaces';
-import { ClientConstructor } from './client';
+import { ClientConstructor, ClientAddress } from './client';
 import * as pbjs from 'protobufjs';
 
 export function clientFactory<TServices extends GRPCServiceMap<TServices>>(
@@ -9,7 +9,7 @@ export function clientFactory<TServices extends GRPCServiceMap<TServices>>(
 
   function create<K extends Extract<keyof TServices, string>>(
     serviceName: K,
-    address: string,
+    address: ClientAddress,
     ClientImpl: ClientConstructor<TServices[K]>
   ) {
     const pbjsService = root.lookupService(serviceName);

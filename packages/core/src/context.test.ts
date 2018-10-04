@@ -1,7 +1,7 @@
 import { Observable, Subject, race, interval, NEVER } from 'rxjs';
 import { Context } from './context';
 import { take, tap, mapTo, last, toArray } from 'rxjs/operators';
-import { ErrorCodes } from './errors';
+import { StatusCodes } from './errors';
 
 const later = () => new Date(Date.now() + 100);
 
@@ -109,7 +109,7 @@ describe('context', () => {
       context.cancel();
 
       return expect(context.cancel$.pipe(take(1)).toPromise()).resolves.toMatchObject({
-        code: ErrorCodes.Cancelled,
+        code: StatusCodes.Cancelled,
         message: 'Request cancelled by the client.',
       });
     });
@@ -129,7 +129,7 @@ describe('context', () => {
       context = Context.create({ deadline: later() });
 
       return expect(context.cancel$.pipe(take(1)).toPromise()).resolves.toMatchObject({
-        code: ErrorCodes.Cancelled,
+        code: StatusCodes.Cancelled,
       });
     });
   });

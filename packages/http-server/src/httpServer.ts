@@ -1,4 +1,3 @@
-import { DEFAULT_SERVER_ERROR } from '@types-first-api/core';
 import * as express from 'express';
 import { Server as NodeHttpServer } from 'http';
 import * as _ from 'lodash';
@@ -6,10 +5,11 @@ import {
   Service,
   Request,
   Context,
-  normalizeError,
-  ERROR_CODES_TO_HTTP_STATUS,
+  createError,
   HEADERS,
+  DEFAULT_SERVER_ERROR,
 } from '@types-first-api/core';
+import { ERROR_CODES_TO_HTTP_STATUS } from '@types-first-api/http-common';
 import { isArray, isString } from 'util';
 
 import { parseStreamingJson, writeStreamingJson } from './jsonStreaming';
@@ -44,21 +44,26 @@ export class HttpServer {
         const addr = this._httpServer.address();
         // in the case of a unix socket binding, address would be a string:
         // https://nodejs.org/dist/latest-v8.x/docs/api/net.html#net_server_address
-        const port = isString(addr) ? 0 : addr.port;
+        const port = isString(addr) ? null : addr.port;
         resolve(port);
       });
     });
   };
 
-  shutdown(): Promise<{}> {
+  shutdown = async () => {
     return new Promise((resolve, reject) => {
       if (this._httpServer == null) {
         return resolve();
       }
-      this._httpServer.close(resolve);
+      this._httpServer.close(err => {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
       this._httpServer = null;
     });
-  }
+  };
 
   private _addEndpoint = (
     serviceName: string,
@@ -89,23 +94,23 @@ export class HttpServer {
           res.write(JSON.stringify(data));
         },
         err => {
-          const error = normalizeError(err, {
+          const error = createError(err, {
             ...DEFAULT_SERVER_ERROR,
-            source: serviceName,
           });
-          const status = ERROR_CODES_TO_HTTP_STATUS[error.code];
+          if (error.source == null) {
+            error.source = serviceName;
+          }
+          const status = ERROR_CODES_TO_HTTP_STATUS[error.code] || 500;
 
-          if (res.headersSent) {
-            res.addTrailers({
-              [HEADERS.TRAILER_ERROR]: status,
-              [HEADERS.TRAILER_ERROR]: JSON.stringify(error),
-            });
-            res.end();
-          } else {
+          res.addTrailers({
+            [HEADERS.TRAILER_ERROR]: status,
+            [HEADERS.TRAILER_ERROR]: JSON.stringify(error),
+          });
+          if (!res.headersSent) {
             res.status(status);
             res.json(error);
-            res.end();
           }
+          res.end();
         },
         () => {
           res.end();

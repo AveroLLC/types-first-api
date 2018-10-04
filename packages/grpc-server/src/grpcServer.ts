@@ -3,8 +3,8 @@ import {
   Service,
   Metadata,
   Context,
-  normalizeError,
   HEADERS,
+  createError,
   DEFAULT_SERVER_ERROR,
 } from '@types-first-api/core';
 import { ERROR_CODES_TO_GRPC_STATUS } from '@types-first-api/grpc-common';
@@ -111,7 +111,10 @@ export class GrpcServer {
   };
 
   private _normalizeError = (err: any, serviceName: string): grpc.ServiceError => {
-    const error = normalizeError(err, { ...DEFAULT_SERVER_ERROR, source: serviceName });
+    const error = createError(err, { ...DEFAULT_SERVER_ERROR });
+    if (error.source == null) {
+      error.source = serviceName;
+    }
     const resMetadata = new grpc.Metadata();
     resMetadata.set(HEADERS.TRAILER_ERROR, JSON.stringify(error));
 

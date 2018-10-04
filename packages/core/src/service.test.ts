@@ -1,9 +1,9 @@
 import { Endpoint } from './interfaces';
 import { Service, Handler } from './service';
 import { of, throwError, Observable, zip } from 'rxjs';
-import { map, delay, mergeMap, finalize } from 'rxjs/operators'
+import { map, delay, mergeMap, finalize } from 'rxjs/operators';
 import { Context } from './context';
-import { ErrorCodes, IError, DEFAULT_SERVER_ERROR } from './errors';
+import { StatusCodes, IError, DEFAULT_SERVER_ERROR } from './errors';
 
 interface IncrementRequest {
   val: number;
@@ -75,7 +75,7 @@ describe('Service', () => {
           const call = s.call('increment', of({ val: 1, add: 2 }), context);
 
           return expect(call.toPromise()).rejects.toMatchObject({
-            code: ErrorCodes.NotImplemented,
+            code: StatusCodes.NotImplemented,
           });
         });
 
@@ -93,14 +93,14 @@ describe('Service', () => {
           const call = s.call('increment', of({ val: 1, add: 2 }), context);
 
           return expect(call.toPromise()).rejects.toMatchObject({
-            code: ErrorCodes.ServerError,
+            code: StatusCodes.ServerError,
             message: 'OH LORDY',
           });
         });
 
         it('should propagate thrown structured errors', () => {
           const err: IError = {
-            code: ErrorCodes.NotAuthenticated,
+            code: StatusCodes.NotAuthenticated,
             message: 'Who are you?',
             stackTrace: 'A, B, C',
           };
@@ -150,19 +150,20 @@ describe('Service', () => {
           return of(expectedIncrementResult);
         });
 
-        const expectedConcatResult = { val: "Hello World" };
+        const expectedConcatResult = { val: 'Hello World' };
         const concat = jest.fn((req, ctx) => {
-          return  of(expectedConcatResult);
+          return of(expectedConcatResult);
         });
         s.registerServiceHandlers({
           increment: increment,
-          concat: concat
+          concat: concat,
         });
 
         const incrementReq$ = s.call('increment', of({ val: 10, add: 2 }), context);
-        const concatReq$ = s.call('concat', of({val: "Hello ", add: "World"}), context);
+        const concatReq$ = s.call('concat', of({ val: 'Hello ', add: 'World' }), context);
 
-        return zip(incrementReq$, concatReq$).toPromise()
+        return zip(incrementReq$, concatReq$)
+          .toPromise()
           .then(([incrementRes, concatRes]) => {
             expect(increment).toHaveBeenCalledTimes(1);
             expect(concat).toHaveBeenCalledTimes(1);
@@ -170,7 +171,6 @@ describe('Service', () => {
             expect(concatRes).toEqual(expectedConcatResult);
           });
       });
-
     });
 
     describe('middleware', () => {

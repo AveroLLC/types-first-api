@@ -4,7 +4,7 @@ import * as pbjs from 'protobufjs';
 import * as _ from 'lodash';
 import { defer, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { normalizeError, DEFAULT_CLIENT_ERROR } from './errors';
+import { createError, DEFAULT_CLIENT_ERROR } from './errors';
 
 export type RpcCall<TReq, TRes> = (req: Request<TReq>, ctx?: Context) => Response<TRes>;
 
@@ -26,8 +26,13 @@ export interface ClientMiddleware<TService extends GRPCService<TService>> {
 
 export type ClientConstructor<TService extends GRPCService<TService>> = new (
   protoService: pbjs.Service,
-  address: string
+  address: ClientAddress
 ) => Client<TService>;
+
+export interface ClientAddress {
+  host: string;
+  port: number;
+}
 
 export abstract class Client<TService extends GRPCService<TService>> {
   private _middleware: ClientMiddleware<TService>[] = [];
@@ -35,7 +40,7 @@ export abstract class Client<TService extends GRPCService<TService>> {
   protected pbjsService: pbjs.Service;
   rpc: RpcCallMap<TService>;
 
-  constructor(protoService: pbjs.Service, address: string) {
+  constructor(protoService: pbjs.Service, address: ClientAddress) {
     this.pbjsService = protoService;
     this.rpc = _.mapValues<Record<string, pbjs.Method>, RpcCall<any, any>>(
       protoService.methods,
@@ -89,9 +94,8 @@ export abstract class Client<TService extends GRPCService<TService>> {
     return response$.pipe(
       catchError(err =>
         throwError(
-          normalizeError(err, {
+          createError(err, {
             ...DEFAULT_CLIENT_ERROR,
-            source: this.getName(),
           })
         )
       )

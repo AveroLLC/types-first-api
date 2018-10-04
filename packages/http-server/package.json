@@ -5,7 +5,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "src/index.ts",
+  "main": "dest/index.js",
   "types": "dest/index.d.ts",
   "files": [
     "dest"
@@ -16,10 +16,11 @@
   },
   "dependencies": {
     "@types-first-api/core": "^0.0.3",
+    "@types-first-api/http-common": "^0.0.3",
     "express": "^4.16.3",
     "lodash": "^4.17.10",
     "protobufjs": "^6.8.8",
-    "rxjs": "^6.3.2"
+    "rxjs": "^6.3.3"
   },
   "author": "",
   "license": "Apache-2.0",
