@@ -1,6 +1,6 @@
 import { take } from 'rxjs/operators';
 import { Subject, Observable, Subscription } from 'rxjs';
-import fetch, { Request } from 'cross-fetch';
+import axios from 'axios';
 import {
   Client,
   ClientAddress,
@@ -53,49 +53,41 @@ export class HttpClient<TService extends GRPCService<TService>> extends Client<T
 
     const response$ = new Subject<TService[K]['response']>();
 
+    const cancelSource = axios.CancelToken.source();
+
     const url = `${this._address}${path}`;
+    const headers = {
+      ...ctx.metadata,
+    };
+    if (ctx.deadline != null) {
+      headers[HEADERS.DEADLINE] = ctx.deadline.toISOString();
+    }
     const requestSubscription = request$.pipe(take(1)).subscribe(val => {
-      fetch(url, {
-        method: 'POST',
-        headers: {
-          ...ctx.metadata,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(val),
-      })
-        .catch(err => {
-          const error: IError = {
-            code: StatusCodes.NetworkError,
-            message: err.message,
-          };
-          throw error;
+      // TODO
+      axios
+        .post(url, val, {
+          cancelToken: cancelSource.token,
+          headers,
         })
         .then(res => {
-          if (res.ok) {
-            return res.json();
-          }
-
-          return res.json().then(err => {
-            if (isIError(err)) {
-              throw err;
-            }
-
-            const code = HTTP_STATUS_TO_ERROR_CODES[res.status] || 0;
-            throw {
-              code,
-              ...DEFAULT_CLIENT_ERROR,
-            };
-          });
-        })
-        .then(r => {
-          response$.next(r);
+          response$.next(res.data);
           response$.complete();
         })
         .catch(err => {
-          const error = createError(err, {
-            ...DEFAULT_CLIENT_ERROR,
-          });
-          response$.error(error);
+          let structuredError: IError;
+          if (err.response) {
+            const { data, status } = err.response;
+            const code = HTTP_STATUS_TO_ERROR_CODES[status] || StatusCodes.ServerError;
+            structuredError = createError(data, { ...DEFAULT_CLIENT_ERROR, code });
+          } else {
+            // Something happened in setting up the request that triggered an Error
+            structuredError = createError(err, {
+              code: StatusCodes.Unavailable,
+              message: 'Something went wrong while processing the request.',
+            });
+          }
+
+          response$.error(structuredError);
         })
         .then(() => {
           if (cancelSubscription != null) {
@@ -106,6 +98,7 @@ export class HttpClient<TService extends GRPCService<TService>> extends Client<T
 
     const cancelSubscription = ctx.cancel$.pipe(take(1)).subscribe(err => {
       response$.error(err);
+      cancelSource.cancel(err.message);
       requestSubscription.unsubscribe();
     });
 

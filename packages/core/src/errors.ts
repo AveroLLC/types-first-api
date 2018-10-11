@@ -4,6 +4,9 @@ import * as _ from 'lodash';
 export enum StatusCodes {
   Ok = 'OK',
 
+  // TODO: deal with status for token refresh (currently ABORTED / 412)
+  TokenExpired = '',
+
   Cancelled = 'Cancelled',
   Deadline = 'Deadline Exceeded',
   RateLimit = 'Rate Limit Exceeded',
@@ -20,7 +23,6 @@ export enum StatusCodes {
 }
 
 export const HEADERS = {
-  TRAILER_STATUS: 'x-grpc-status',
   TRAILER_ERROR: 'x-grpc-serialized-error',
   DEADLINE: 'x-grpc-deadline',
 };
@@ -28,6 +30,7 @@ export const HEADERS = {
 export interface IError {
   code: StatusCodes;
   message: string;
+  // TODO: source array []
   source?: string;
   details?: string;
   stackTrace?: string;
@@ -44,7 +47,7 @@ export const DEFAULT_CLIENT_ERROR = {
 };
 
 export function isIError(err: any): err is IError {
-  return err != null && isString(err.code) && isString(err.message);
+  return err != null && _.includes(StatusCodes, err.code) && isString(err.message);
 }
 
 export function createError(err: any, defaultError: IError): IError {

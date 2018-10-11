@@ -1,4 +1,4 @@
-import { Observable, Subject, race, interval, NEVER } from 'rxjs';
+import { Observable, Subject, race, interval, NEVER, of, defer } from 'rxjs';
 import { Context } from './context';
 import { take, tap, mapTo, last, toArray } from 'rxjs/operators';
 import { StatusCodes } from './errors';
@@ -100,7 +100,7 @@ describe('context', () => {
       return expect(isPending(context.cancel$.toPromise())).resolves.toEqual(true);
     });
 
-    it('should not emit a value if it has not been cancelled', () => {
+    it('should not throw a value if it has not been cancelled', () => {
       const emitted = context.cancel$.pipe(take(1)).toPromise();
       return expect(isPending(emitted)).resolves.toEqual(true);
     });
@@ -108,9 +108,18 @@ describe('context', () => {
     it('should emit an error & close when cancelled', () => {
       context.cancel();
 
-      return expect(context.cancel$.pipe(take(1)).toPromise()).resolves.toMatchObject({
+      return expect(context.cancel$.pipe(take(1)).toPromise()).rejects.toMatchObject({
         code: StatusCodes.Cancelled,
         message: 'Request cancelled by the client.',
+      });
+    });
+
+    it('should win a race', () => {
+      context.cancel();
+      const r = race(context.cancel$, of({})).toPromise();
+
+      return expect(r).rejects.toMatchObject({
+        code: StatusCodes.Cancelled,
       });
     });
 
@@ -119,8 +128,6 @@ describe('context', () => {
 
       context.cancel();
       context.cancel();
-
-      return context.cancel$.pipe(take(1)).toPromise();
     });
   });
 
@@ -128,8 +135,16 @@ describe('context', () => {
     it('should allow a scheduled cancellation with a deadline', () => {
       context = Context.create({ deadline: later() });
 
-      return expect(context.cancel$.pipe(take(1)).toPromise()).resolves.toMatchObject({
-        code: StatusCodes.Cancelled,
+      return expect(context.cancel$.pipe(take(1)).toPromise()).rejects.toMatchObject({
+        code: StatusCodes.Deadline,
+      });
+    });
+
+    it('should allow cancelation from a past deadline', () => {
+      context = Context.create({ deadline: new Date(0) });
+
+      return expect(context.cancel$.pipe(take(1)).toPromise()).rejects.toMatchObject({
+        code: StatusCodes.Deadline,
       });
     });
   });
@@ -158,7 +173,9 @@ describe('context', () => {
 
       c1.cancel();
 
-      return c2.cancel$.pipe(take(1)).toPromise();
+      return expect(c2.cancel$.pipe(take(1)).toPromise()).rejects.toMatchObject({
+        code: StatusCodes.Cancelled,
+      });
     });
 
     it('should not propagate cancellation from downstream contexts', () => {
@@ -179,7 +196,9 @@ describe('context', () => {
 
       const c2 = Context.from(c1);
 
-      return c2.cancel$.pipe(take(1)).toPromise();
+      return expect(c2.cancel$.pipe(take(1)).toPromise()).rejects.toMatchObject({
+        code: StatusCodes.Deadline,
+      });
     });
   });
 });

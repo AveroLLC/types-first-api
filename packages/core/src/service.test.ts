@@ -312,9 +312,6 @@ describe('Service', () => {
       });
     });
   });
-});
 
-const tracer = (req, ctx, deps, next) => {
-  ctx.set('user', { username: 'helo', birthday: new Date() });
-  return next(req, ctx);
-};
+  describe('validation', () => {});
+});

@@ -1,11 +1,10 @@
+import { later } from './util';
 import { Client, Context, StatusCodes, Service } from '@types-first-api/core';
 import { GrpcClient } from '@types-first-api/grpc-client';
 import { GrpcServer } from '@types-first-api/grpc-server';
 import { NEVER, of } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { clients, services, wtf } from '../generated/Service';
-
-const later = () => new Date(Date.now() + 100);
 
 describe('grpc', () => {
   let service: Service<wtf.guys.SchedulingService>;
@@ -15,10 +14,10 @@ describe('grpc', () => {
   beforeEach(async () => {
     service = services.create('wtf.guys.SchedulingService', {});
     server = new GrpcServer(service);
-    await server.bind({ port: 5555 });
+    await server.bind({ port: 5556 });
     client = clients.create(
       'wtf.guys.SchedulingService',
-      { host: 'localhost', port: 5555 },
+      { host: 'localhost', port: 5556 },
       GrpcClient
     );
   });
@@ -97,8 +96,9 @@ describe('grpc', () => {
         return NEVER;
       });
 
-      const ctx = Context.create({ deadline: later() });
+      const ctx = Context.create();
       const response$ = client.rpc.Unary(of({ id: '1' }), ctx);
+      setTimeout(ctx.cancel, 100);
 
       return expect(response$.toPromise()).rejects.toMatchObject({
         code: StatusCodes.Cancelled,
@@ -124,6 +124,21 @@ describe('grpc', () => {
   });
 
   describe('deadlines', () => {
+    it('should cause the client request to cancel with deadline exceeded', () => {
+      service.registerServiceHandler('Unary', (req$, ctx) => {
+        return NEVER;
+      });
+
+      const deadline = later();
+      const ctx = Context.create({ deadline });
+      const res$ = client.rpc.Unary(of({ id: '1' }), ctx);
+
+      return expect(res$.toPromise()).rejects.toMatchObject({
+        code: StatusCodes.Deadline,
+        message: `Request exceeded deadline ${deadline.toISOString()}.`,
+      });
+    });
+
     it('should propagate cancellation to the server', () => {
       let serverContext: Context;
       service.registerServiceHandler('Unary', (req$, ctx) => {
@@ -139,8 +154,8 @@ describe('grpc', () => {
         return expect(
           serverContext.cancel$.pipe(take(1)).toPromise()
         ).resolves.toMatchObject({
-          code: StatusCodes.Cancelled,
-          message: `Request exceeded deadline ${deadline.toISOString()}`,
+          code: StatusCodes.Deadline,
+          message: `Request exceeded deadline ${deadline.toISOString()}.`,
         });
       });
     });

@@ -81,6 +81,8 @@ export class HttpServer {
         deadline: deadline == null ? null : new Date(deadline),
       });
 
+      req.on('close', context.cancel);
+
       const response$ = service.call(methodName, request$, context);
 
       response$.subscribe(

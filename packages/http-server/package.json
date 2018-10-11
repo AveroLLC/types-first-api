@@ -5,8 +5,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "dest/index.js",
-  "types": "dest/index.d.ts",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "files": [
     "dest"
   ],

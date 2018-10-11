@@ -2,9 +2,10 @@ import { GRPCService, Request, Response } from './interfaces';
 import { Context } from './context';
 import * as pbjs from 'protobufjs';
 import * as _ from 'lodash';
-import { defer, throwError } from 'rxjs';
+import { defer, throwError, race } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { createError, DEFAULT_CLIENT_ERROR } from './errors';
+import { shortCircuitRace } from './shortCircuitRace';
 
 export type RpcCall<TReq, TRes> = (req: Request<TReq>, ctx?: Context) => Response<TRes>;
 
@@ -74,6 +75,9 @@ export abstract class Client<TService extends GRPCService<TService>> {
     request$: Request<TService[K]['request']>,
     context: Context
   ): Response<TService[K]['response']> => {
+    // TODO:
+    // should I do a context.from here? if so, what happens to metadata?
+    // do I need to race with context cancel?
     const handlerNext = (req$: Request<TService[K]['request']>, ctx: Context) => {
       return this._call(methodName, req$, ctx);
     };
@@ -81,14 +85,24 @@ export abstract class Client<TService extends GRPCService<TService>> {
     const stack = _.reduceRight(
       this._middleware,
       (next, middleware) => {
-        return (req$, ctx) => {
+        return (req$, ctx: Context) => {
           return middleware(req$, ctx, next, methodName);
         };
       },
       handlerNext
     );
 
-    const response$ = defer(() => stack(request$, context));
+    /**
+     * mw1(req$, ctx, next, methodName) ->
+     *    next(req$', ctx')
+     * mw2(req$', ctx', next, methodName) ->
+     *    next(req$'', ctx'')
+     */
+
+    const response$ = shortCircuitRace(
+      context.cancel$,
+      defer(() => stack(request$, context))
+    );
 
     // Will always throw a structured error
     return response$.pipe(
