@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { Context } from './context';
 import { DEFAULT_SERVER_ERROR, StatusCodes, IError, createError } from './errors';
 import { GRPCService, Request, Response } from './interfaces';
+import { shortCircuitRace } from './shortCircuitRace';
 
 export interface Handler<TReq, TRes, TDependencies extends object = {}> {
   (request$: Request<TReq>, context: Context, dependencies: TDependencies): Response<
@@ -100,7 +101,10 @@ export class Service<
       handlerNext
     );
 
-    const response$ = defer(() => stack(request, context));
+    const response$ = shortCircuitRace(
+      context.cancel$,
+      defer(() => stack(request, context))
+    );
 
     // Will always throw a structured error
     return response$.pipe(

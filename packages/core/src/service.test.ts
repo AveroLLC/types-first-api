@@ -314,4 +314,27 @@ describe('Service', () => {
   });
 
   describe('validation', () => {});
+
+  describe('cancelation', () => {
+    it('skips the stack if context is already canceled', async () => {
+      const middleware = jest.fn((req, ctx, deps, next, methodName) => {
+        return next(req, ctx);
+      });
+      s.addMiddleware(middleware);
+      const handler = jest.fn((req, ctx) => {
+        return of({ val: 12 });
+      });
+      s.registerServiceHandler('increment', handler);
+
+      context.cancel();
+      const res$ = s.call('increment', of({ val: 10, add: 2 }), context);
+
+      await expect(res$.toPromise()).rejects.toMatchObject({
+        code: StatusCodes.Cancelled,
+      });
+
+      expect(middleware).not.toHaveBeenCalled();
+      expect(handler).not.toHaveBeenCalled();
+    });
+  });
 });
