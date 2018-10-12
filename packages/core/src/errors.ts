@@ -5,7 +5,7 @@ export enum StatusCodes {
   Ok = 'OK',
 
   // TODO: deal with status for token refresh (currently ABORTED / 412)
-  TokenExpired = '',
+  TokenExpired = 'Token Expired',
 
   Cancelled = 'Cancelled',
   Deadline = 'Deadline Exceeded',
@@ -30,8 +30,7 @@ export const HEADERS = {
 export interface IError {
   code: StatusCodes;
   message: string;
-  // TODO: source array []
-  source?: string;
+  forwardedFor: string[];
   details?: string;
   stackTrace?: string;
 }
@@ -39,11 +38,13 @@ export interface IError {
 export const DEFAULT_SERVER_ERROR = {
   code: StatusCodes.ServerError,
   message: 'Something went wrong while processing the request.',
+  forwardedFor: [],
 };
 
 export const DEFAULT_CLIENT_ERROR = {
   code: StatusCodes.ClientError,
   message: 'Something went wrong while processing the request.',
+  forwardedFor: [],
 };
 
 export function isIError(err: any): err is IError {
@@ -63,6 +64,7 @@ export function createError(err: any, defaultError: IError): IError {
         ...defaultError,
         message: err.message,
         stackTrace: err.stack,
+        forwardedFor: [],
       };
     }
   }
@@ -70,6 +72,7 @@ export function createError(err: any, defaultError: IError): IError {
   return {
     ...defaultError,
     details: `source error: ${JSON.stringify(err)}`,
+    forwardedFor: [],
     stackTrace,
   };
 }

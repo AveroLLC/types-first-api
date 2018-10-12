@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 
 export const ERROR_CODES_TO_GRPC_STATUS: Record<StatusCodes, grpc.status> = {
   [StatusCodes.Ok]: grpc.status.OK,
+  [StatusCodes.TokenExpired]: grpc.status.ABORTED,
   [StatusCodes.Cancelled]: grpc.status.CANCELLED,
   [StatusCodes.Deadline]: grpc.status.DEADLINE_EXCEEDED,
   [StatusCodes.RateLimit]: grpc.status.RESOURCE_EXHAUSTED,
@@ -29,7 +30,7 @@ const GRPC_STATUS_TO_ERROR_CODES: Record<grpc.status, StatusCodes> = {
   [grpc.status.PERMISSION_DENIED]: StatusCodes.NotAuthorized,
   [grpc.status.RESOURCE_EXHAUSTED]: StatusCodes.RateLimit,
   [grpc.status.FAILED_PRECONDITION]: StatusCodes.ServerError,
-  [grpc.status.ABORTED]: StatusCodes.ServerError,
+  [grpc.status.ABORTED]: StatusCodes.TokenExpired,
   [grpc.status.OUT_OF_RANGE]: StatusCodes.ServerError,
   [grpc.status.UNIMPLEMENTED]: StatusCodes.NotImplemented,
   [grpc.status.INTERNAL]: StatusCodes.ServerError,
@@ -53,6 +54,7 @@ export function normalizeGrpcError(err, defaultError: IError): IError {
     const error: IError = {
       code,
       message: err.details || defaultError.message,
+      forwardedFor: [],
     };
     err = error;
   }

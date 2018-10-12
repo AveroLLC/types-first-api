@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 
 export const ERROR_CODES_TO_HTTP_STATUS: Record<StatusCodes, number> = {
   [StatusCodes.Ok]: 200,
+  [StatusCodes.TokenExpired]: 412,
   [StatusCodes.Cancelled]: 499,
   [StatusCodes.Deadline]: 499,
   [StatusCodes.RateLimit]: 429,

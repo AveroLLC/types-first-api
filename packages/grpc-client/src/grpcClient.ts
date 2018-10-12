@@ -13,8 +13,8 @@ import { normalizeGrpcError } from '@types-first-api/grpc-common';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
-import { Subject } from 'rxjs';
-import { take } from 'rxjs/operators';
+import { Subject, EMPTY } from 'rxjs';
+import { take, finalize, catchError } from 'rxjs/operators';
 
 export class GrpcClient<TService extends GRPCService<TService>> extends Client<TService> {
   private _client: grpc.Client;
@@ -78,11 +78,15 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       }
     );
 
-    const cancelSubscription = ctx.cancel$.pipe(take(1)).subscribe(err => {
-      response$.error(err);
-      call.cancel();
-      reqSubscription.unsubscribe();
-    });
+    const cancelSubscription = ctx.cancel$
+      .pipe(
+        catchError(() => {
+          call.cancel();
+          reqSubscription.unsubscribe();
+          return EMPTY;
+        })
+      )
+      .subscribe();
 
     call.on('data', d => {
       response$.next(d);

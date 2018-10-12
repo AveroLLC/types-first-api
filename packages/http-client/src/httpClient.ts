@@ -1,5 +1,5 @@
-import { take } from 'rxjs/operators';
-import { Subject, Observable, Subscription } from 'rxjs';
+import { take, catchError } from 'rxjs/operators';
+import { Subject, Observable, Subscription, EMPTY } from 'rxjs';
 import axios from 'axios';
 import {
   Client,
@@ -45,6 +45,7 @@ export class HttpClient<TService extends GRPCService<TService>> extends Client<T
         details: `The method ${methodName} requires support for ${errorDetails.join(
           ' and '
         )}, which is not provided by the HTTP Client.`,
+        forwardedFor: [],
       };
       throw error;
     }
@@ -84,6 +85,7 @@ export class HttpClient<TService extends GRPCService<TService>> extends Client<T
             structuredError = createError(err, {
               code: StatusCodes.Unavailable,
               message: 'Something went wrong while processing the request.',
+              forwardedFor: [],
             });
           }
 
@@ -95,12 +97,15 @@ export class HttpClient<TService extends GRPCService<TService>> extends Client<T
           }
         });
     });
-
-    const cancelSubscription = ctx.cancel$.pipe(take(1)).subscribe(err => {
-      response$.error(err);
-      cancelSource.cancel(err.message);
-      requestSubscription.unsubscribe();
-    });
+    const cancelSubscription = ctx.cancel$
+      .pipe(
+        catchError(err => {
+          cancelSource.cancel(err.message);
+          requestSubscription.unsubscribe();
+          return EMPTY;
+        })
+      )
+      .subscribe();
 
     return response$.asObservable();
   }

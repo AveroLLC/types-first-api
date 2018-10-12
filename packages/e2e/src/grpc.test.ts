@@ -56,7 +56,7 @@ describe('grpc', () => {
         return expect(response$.toPromise()).rejects.toMatchObject({
           code: 'Not Implemented',
           message: `RPC Method '${methodName}' is not implemented.`,
-          source: 'wtf.guys.SchedulingService',
+          forwardedFor: ['wtf.guys.SchedulingService'],
         });
       });
     });
@@ -70,7 +70,7 @@ describe('grpc', () => {
       return expect(response$.toPromise()).rejects.toMatchObject({
         code: 'Not Implemented',
         message: "RPC Method 'ServerStream' is not implemented.",
-        source: 'wtf.guys.SchedulingService',
+        forwardedFor: ['wtf.guys.SchedulingService', 'wtf.guys.SchedulingService'],
       });
     });
   });
@@ -118,7 +118,9 @@ describe('grpc', () => {
       setTimeout(ctx.cancel, 100);
 
       return res$.toPromise().catch(() => {
-        return serverContext.cancel$.pipe(take(1)).toPromise();
+        return expect(serverContext.cancel$.toPromise()).rejects.toMatchObject({
+          code: StatusCodes.Cancelled,
+        });
       });
     });
   });
@@ -151,9 +153,7 @@ describe('grpc', () => {
       const res$ = client.rpc.Unary(of({ id: '1' }), ctx);
 
       return res$.toPromise().catch(() => {
-        return expect(
-          serverContext.cancel$.pipe(take(1)).toPromise()
-        ).resolves.toMatchObject({
+        return expect(serverContext.cancel$.toPromise()).rejects.toMatchObject({
           code: StatusCodes.Deadline,
           message: `Request exceeded deadline ${deadline.toISOString()}.`,
         });

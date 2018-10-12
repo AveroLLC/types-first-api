@@ -65,7 +65,7 @@ describe('http', () => {
       return expect(response$.toPromise()).rejects.toMatchObject({
         code: 'Not Implemented',
         message: `RPC Method 'Unary' is not implemented.`,
-        source: 'wtf.guys.SchedulingService',
+        forwardedFor: ['wtf.guys.SchedulingService'],
       });
     });
 
@@ -80,7 +80,7 @@ describe('http', () => {
         message: 'Streaming requests are not supported by the HTTP Client.',
         details:
           'The method ServerStream requires support for response streaming, which is not provided by the HTTP Client.',
-        source: 'wtf.guys.SchedulingService',
+        forwardedFor: ['wtf.guys.SchedulingService'],
       });
     });
 
@@ -93,7 +93,7 @@ describe('http', () => {
       return expect(response$.toPromise()).rejects.toMatchObject({
         code: StatusCodes.ServerError,
         message: 'Uh OH!',
-        source: 'wtf.guys.SchedulingService',
+        forwardedFor: ['wtf.guys.SchedulingService'],
       });
     });
   });
@@ -171,7 +171,9 @@ describe('http', () => {
       setTimeout(ctx.cancel, 100);
 
       return res$.toPromise().catch(() => {
-        return serverContext.cancel$.pipe(take(1)).toPromise();
+        return expect(serverContext.cancel$.toPromise()).rejects.toMatchObject({
+          code: StatusCodes.Cancelled,
+        });
       });
     });
   });
@@ -204,9 +206,7 @@ describe('http', () => {
       const res$ = client.rpc.Unary(of({ id: '1' }), ctx);
 
       return res$.toPromise().catch(() => {
-        return expect(
-          serverContext.cancel$.pipe(take(1)).toPromise()
-        ).resolves.toMatchObject({
+        return expect(serverContext.cancel$.toPromise()).rejects.toMatchObject({
           code: StatusCodes.Deadline,
           message: `Request exceeded deadline ${deadline.toISOString()}.`,
         });

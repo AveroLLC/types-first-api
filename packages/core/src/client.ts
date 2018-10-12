@@ -92,13 +92,6 @@ export abstract class Client<TService extends GRPCService<TService>> {
       handlerNext
     );
 
-    /**
-     * mw1(req$, ctx, next, methodName) ->
-     *    next(req$', ctx')
-     * mw2(req$', ctx', next, methodName) ->
-     *    next(req$'', ctx'')
-     */
-
     const response$ = shortCircuitRace(
       context.cancel$,
       defer(() => stack(request$, context))

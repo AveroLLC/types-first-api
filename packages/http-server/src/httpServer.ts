@@ -99,9 +99,7 @@ export class HttpServer {
           const error = createError(err, {
             ...DEFAULT_SERVER_ERROR,
           });
-          if (error.source == null) {
-            error.source = serviceName;
-          }
+          error.forwardedFor.unshift(serviceName);
           const status = ERROR_CODES_TO_HTTP_STATUS[error.code] || 500;
 
           res.addTrailers({

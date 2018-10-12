@@ -16,9 +16,10 @@ Context is a container for propagating:
 - Errors?
 */
 
-const CANCELLATION_ERROR = {
+const CANCELLATION_ERROR: IError = {
   code: StatusCodes.Cancelled,
   message: 'Request cancelled by the client.',
+  forwardedFor: [],
 };
 
 export class Context {
@@ -40,6 +41,7 @@ export class Context {
       const deadlineError: IError = {
         code: StatusCodes.Deadline,
         message: `Request exceeded deadline ${this.deadline.toISOString()}.`,
+        forwardedFor: [],
       };
       if (dt > 0) {
         this.timer = setTimeout(() => {

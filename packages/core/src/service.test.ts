@@ -103,6 +103,7 @@ describe('Service', () => {
             code: StatusCodes.NotAuthenticated,
             message: 'Who are you?',
             stackTrace: 'A, B, C',
+            forwardedFor: [],
           };
           registerToThrow(err);
 

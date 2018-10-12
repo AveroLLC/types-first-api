@@ -112,9 +112,7 @@ export class GrpcServer {
 
   private _normalizeError = (err: any, serviceName: string): grpc.ServiceError => {
     const error = createError(err, { ...DEFAULT_SERVER_ERROR });
-    if (error.source == null) {
-      error.source = serviceName;
-    }
+    error.forwardedFor.unshift(serviceName);
     const resMetadata = new grpc.Metadata();
     resMetadata.set(HEADERS.TRAILER_ERROR, JSON.stringify(error));
 
