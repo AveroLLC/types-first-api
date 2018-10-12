@@ -6,6 +6,7 @@ import { Context } from './context';
 import { DEFAULT_SERVER_ERROR, StatusCodes, IError, createError } from './errors';
 import { GRPCService, Request, Response } from './interfaces';
 import { shortCircuitRace } from './shortCircuitRace';
+import { createMessageValidator } from './middleware/messageValidation';
 
 export interface Handler<TReq, TRes, TDependencies extends object = {}> {
   (request$: Request<TReq>, context: Context, dependencies: TDependencies): Response<
@@ -55,6 +56,7 @@ export class Service<
   constructor(protoService: pbjs.Service, dependencies: TDependencies) {
     this.pbjsService = protoService;
     this._dependencies = dependencies;
+    this.addMiddleware(createMessageValidator(this.pbjsService));
   }
 
   private _notImplemented = (methodName: keyof TService) => () => {

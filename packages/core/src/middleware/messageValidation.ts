@@ -1,13 +1,12 @@
 import { Middleware, Service } from '../service';
-import { ErrorCodes, IError } from '../errors';
+import { StatusCodes, IError } from '../errors';
 import { map } from 'rxjs/operators';
+import * as pbjs from 'protobufjs';
 
-export function addToServer<TServer extends Service<any, any, any>>(
-  server: TServer
-): void {
-  const { pbjsService } = server;
+export function createMessageValidator(pbjsService: pbjs.Service): Middleware<any, any> {
+  pbjsService.resolveAll();
 
-  const middleware: Middleware<any, any, any> = (req$, ctx, deps, next, methodName) => {
+  return (req$, ctx, deps, next, methodName) => {
     const reqMessage = pbjsService.methods[methodName as string].resolvedRequestType;
     const resMessage = pbjsService.methods[methodName as string].resolvedResponseType;
 
@@ -16,9 +15,10 @@ export function addToServer<TServer extends Service<any, any, any>>(
         const validationError = reqMessage.verify(d);
         if (validationError) {
           const err: IError = {
-            code: ErrorCodes.BadRequest,
+            code: StatusCodes.BadRequest,
             message: validationError,
             stackTrace: new Error().stack,
+            forwardedFor: [],
           };
           throw err;
         }
@@ -31,9 +31,10 @@ export function addToServer<TServer extends Service<any, any, any>>(
         const validationError = resMessage.verify(d);
         if (validationError) {
           const err: IError = {
-            code: ErrorCodes.ServerError,
+            code: StatusCodes.ServerError,
             message: validationError,
             stackTrace: new Error().stack,
+            forwardedFor: [],
           };
           throw err;
         }
@@ -42,6 +43,4 @@ export function addToServer<TServer extends Service<any, any, any>>(
       })
     );
   };
-
-  server.addMiddleware(middleware);
 }

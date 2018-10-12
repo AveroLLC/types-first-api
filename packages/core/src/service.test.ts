@@ -1,35 +1,15 @@
-import { Endpoint } from './interfaces';
+import { IncrementRequest } from './../dest/Test';
+import { TestService, pbjsService, IncrementRequest } from './testData';
 import { Service, Handler } from './service';
 import { of, throwError, Observable, zip } from 'rxjs';
 import { map, delay, mergeMap, finalize } from 'rxjs/operators';
 import { Context } from './context';
 import { StatusCodes, IError, DEFAULT_SERVER_ERROR } from './errors';
 
-interface IncrementRequest {
-  val: number;
-  add: number;
-}
-interface IncrementResponse {
-  val: number;
-}
-
-interface ConcatRequest {
-  val: string;
-  add: string;
-}
-interface ConcatResponse {
-  val: string;
-}
-
 interface Dependencies {
   usersSvc: {
     authenticate: () => Observable<boolean>;
   };
-}
-
-interface TestService {
-  increment: Endpoint<IncrementRequest, IncrementResponse>;
-  concat: Endpoint<ConcatRequest, ConcatResponse>;
 }
 
 describe('Service', () => {
@@ -40,18 +20,9 @@ describe('Service', () => {
   };
 
   beforeEach(() => {
-    s = new Service<TestService, Dependencies>(
-      {
-        methods: {
-          increment: {},
-          concat: {},
-        },
-        fullName: '',
-      } as any,
-      {
-        usersSvc,
-      }
-    );
+    s = new Service<TestService, Dependencies>(pbjsService, {
+      usersSvc,
+    });
     context = Context.create({});
   });
 
@@ -314,7 +285,62 @@ describe('Service', () => {
     });
   });
 
-  describe('validation', () => {});
+  describe.only('validation', () => {
+    beforeEach(() => {
+      s.registerServiceHandler('increment', req$ => {
+        return req$.pipe(
+          map(req => {
+            const { val, add } = req;
+            return { val: val + (add == null ? 5 : add) };
+          })
+        );
+      });
+    });
+    it('should return an error if a required field is not provided', async () => {
+      const badReq = {} as any;
+
+      const res$ = s.call('increment', of(badReq), context);
+      await expect(res$.toPromise()).rejects.toMatchObject({
+        code: StatusCodes.BadRequest,
+        message: 'val: integer expected',
+      });
+    });
+    it('should return an error if a wrong type is provided', async () => {
+      const badReq = { val: 1, add: '2' } as any;
+
+      const res$ = s.call('increment', of(badReq), context);
+      await expect(res$.toPromise()).rejects.toMatchObject({
+        code: StatusCodes.BadRequest,
+        message: 'add: integer expected',
+      });
+    });
+    it('should not return an error if optional fields are not provided', async () => {
+      const badReq = { val: 1 } as any;
+
+      const res$ = s.call('increment', of(badReq), context);
+      await expect(res$.toPromise()).resolves.toEqual({
+        val: 6,
+      });
+    });
+    it('should strip additional properties', async () => {
+      expect.assertions(1);
+
+      const badReq = { val: 1, add: 2, extra: 3 } as any;
+
+      s.registerServiceHandler('increment', req$ => {
+        return req$.pipe(
+          map(req => {
+            expect(req).not.toHaveProperty('extra');
+            const { val, add } = req;
+            return { val: val + (add == null ? 5 : add) };
+          })
+        );
+      });
+
+      const res$ = s.call('increment', of(badReq), context);
+      await res$.toPromise();
+    });
+  });
 
   describe('cancelation', () => {
     it('skips the stack if context is already canceled', async () => {

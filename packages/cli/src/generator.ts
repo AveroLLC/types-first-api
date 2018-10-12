@@ -2,6 +2,17 @@ import * as pbjs from 'protobufjs';
 import * as ts from 'typescript';
 import * as _ from 'lodash';
 
+/*
+So you're digging around in here and want to make some changes, huh?
+
+You're going to need...
+- https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
+- https://astexplorer.net/
+- The moral support of Kevin Saldaña
+
+Good luck!
+*/
+
 export default function generate(protoPath: string): string {
   const root = pbjs.loadSync(protoPath);
   root.resolveAll();
@@ -120,20 +131,12 @@ function isEnum(obj: any): obj is pbjs.Enum {
   return obj.values != null;
 }
 
-function isField(obj: any): obj is pbjs.Field {
-  return obj.type != null && obj.id != null;
-}
-
 function isMapField(obj: any): obj is pbjs.MapField {
   return obj.keyType != null;
 }
 
 function isService(obj: any): obj is pbjs.Service {
   return obj.methods != null;
-}
-
-function isMethod(obj: any): obj is pbjs.Method {
-  return obj.requestType != null && obj.responseType != null;
 }
 
 function parseNode(jsonNode: any, name = ''): ts.Statement[] {
@@ -173,14 +176,14 @@ function buildNamespace(jsonNode: pbjs.Namespace, name: string): ts.Statement[] 
 
 function buildMessage(jsonNode: pbjs.Type, name: string): ts.Statement {
   const fields = _.map(jsonNode.fields, buildField);
-  // TODO: deal with oneofs?
+  const oneofs = _.map(jsonNode.oneofs, buildOneOf);
   return ts.createInterfaceDeclaration(
     [],
     [ts.createToken(ts.SyntaxKind.ExportKeyword)],
     name,
     [],
     [],
-    fields
+    [...oneofs, ...fields]
   );
 }
 
@@ -191,6 +194,20 @@ function buildField(jsonNode: pbjs.Field, name: string): ts.TypeElement {
     name,
     isOptional ? ts.createToken(ts.SyntaxKind.QuestionToken) : null,
     mapTypes(jsonNode),
+    null
+  );
+}
+
+function buildOneOf(jsonNode: pbjs.OneOf, name: string): ts.TypeElement {
+  const fieldNames = jsonNode.fieldsArray.map(field => field.name);
+  const fieldNameLiterals = fieldNames.map(fieldName => {
+    return ts.createLiteralTypeNode(ts.createStringLiteral(fieldName));
+  });
+  return ts.createPropertySignature(
+    [],
+    name,
+    ts.createToken(ts.SyntaxKind.QuestionToken),
+    ts.createUnionTypeNode(fieldNameLiterals),
     null
   );
 }
