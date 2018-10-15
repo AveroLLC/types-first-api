@@ -1,4 +1,4 @@
-import { StatusCodes, IError, createError } from '@types-first-api/core';
+import { createError, IError, StatusCodes } from '@types-first-api/core';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
 

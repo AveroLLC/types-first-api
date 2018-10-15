@@ -1,8 +1,7 @@
-import { race, Observable, Subject, NEVER } from 'rxjs';
 import * as _ from 'lodash';
-import { Metadata } from './interfaces';
+import { NEVER, Observable, race, Subject } from 'rxjs';
 import { IError, StatusCodes } from './errors';
-import { filter } from 'rxjs/operators';
+import { Metadata } from './interfaces';
 
 export interface ContextOpts {
   metadata?: Metadata;

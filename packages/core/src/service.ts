@@ -3,10 +3,10 @@ import * as pbjs from 'protobufjs';
 import { defer, Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Context } from './context';
-import { DEFAULT_SERVER_ERROR, StatusCodes, IError, createError } from './errors';
+import { createError, DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
 import { GRPCService, Request, Response } from './interfaces';
-import { shortCircuitRace } from './shortCircuitRace';
 import { createMessageValidator } from './middleware/messageValidation';
+import { shortCircuitRace } from './shortCircuitRace';
 
 export interface Handler<TReq, TRes, TDependencies extends object = {}> {
   (request$: Request<TReq>, context: Context, dependencies: TDependencies): Response<

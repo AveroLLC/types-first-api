@@ -1,10 +1,9 @@
-import { IncrementRequest } from './../dest/Test';
-import { TestService, pbjsService, IncrementRequest } from './testData';
-import { Service, Handler } from './service';
-import { of, throwError, Observable, zip } from 'rxjs';
-import { map, delay, mergeMap, finalize } from 'rxjs/operators';
+import { Observable, of, throwError, zip } from 'rxjs';
+import { delay, finalize, map, mergeMap } from 'rxjs/operators';
 import { Context } from './context';
-import { StatusCodes, IError, DEFAULT_SERVER_ERROR } from './errors';
+import { DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
+import { Service } from './service';
+import { pbjsService, TestService } from './testData';
 
 interface Dependencies {
   usersSvc: {
@@ -285,7 +284,7 @@ describe('Service', () => {
     });
   });
 
-  describe.only('validation', () => {
+  describe('validation', () => {
     beforeEach(() => {
       s.registerServiceHandler('increment', req$ => {
         return req$.pipe(
@@ -296,6 +295,7 @@ describe('Service', () => {
         );
       });
     });
+
     it('should return an error if a required field is not provided', async () => {
       const badReq = {} as any;
 
@@ -305,6 +305,7 @@ describe('Service', () => {
         message: 'val: integer expected',
       });
     });
+
     it('should return an error if a wrong type is provided', async () => {
       const badReq = { val: 1, add: '2' } as any;
 
@@ -314,6 +315,7 @@ describe('Service', () => {
         message: 'add: integer expected',
       });
     });
+
     it('should not return an error if optional fields are not provided', async () => {
       const badReq = { val: 1 } as any;
 
@@ -322,6 +324,7 @@ describe('Service', () => {
         val: 6,
       });
     });
+
     it('should strip additional properties', async () => {
       expect.assertions(1);
 
@@ -339,6 +342,18 @@ describe('Service', () => {
 
       const res$ = s.call('increment', of(badReq), context);
       await res$.toPromise();
+    });
+
+    it('should format response objects', () => {
+      s.registerServiceHandler('increment', () => {
+        return of({ what: 'is this?' }) as any;
+      });
+
+      const res$ = s.call('increment', of({ val: 1 }), context);
+
+      return expect(res$.toPromise()).resolves.toEqual({
+        val: 0,
+      });
     });
   });
 

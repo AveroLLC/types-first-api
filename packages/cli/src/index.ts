@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import * as program from 'commander';
-import generate from './generator';
 import * as fs from 'fs';
-import * as path from 'path';
 import { mkdirp } from 'mkdirp';
+import * as path from 'path';
+import generate from './generator';
 
 program
   .usage('[options] <protofiles ...>')

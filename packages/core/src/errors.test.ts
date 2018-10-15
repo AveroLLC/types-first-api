@@ -1,8 +1,9 @@
-import { createError, StatusCodes, IError } from './errors';
+import { createError, IError, StatusCodes } from './errors';
 
 const DEFAULT_ERROR: IError = {
   code: StatusCodes.BadRequest,
   message: 'Bad Request',
+  forwardedFor: [],
 };
 
 describe('errors', () => {
@@ -18,9 +19,9 @@ describe('errors', () => {
       expect(error.stackTrace).toBeDefined;
     });
 
-    it('should not provide a source', () => {
+    it('should initialize forwardedFor to an empty array', () => {
       const error = createError(null, DEFAULT_ERROR);
-      expect(error.source).toBeUndefined;
+      expect(error.forwardedFor).toEqual([]);
     });
   });
 
@@ -36,9 +37,9 @@ describe('errors', () => {
       expect(error.stackTrace).toBeDefined;
     });
 
-    it('should not provide a source', () => {
+    it('should initialize forwardedFor to an empty array', () => {
       const error = createError({}, DEFAULT_ERROR);
-      expect(error.source).toBeUndefined;
+      expect(error.forwardedFor).toEqual([]);
     });
 
     it('should include the source error', () => {

@@ -1,10 +1,10 @@
-import { GRPCService, Request, Response } from './interfaces';
-import { Context } from './context';
-import * as pbjs from 'protobufjs';
 import * as _ from 'lodash';
-import { defer, throwError, race } from 'rxjs';
+import * as pbjs from 'protobufjs';
+import { defer, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { Context } from './context';
 import { createError, DEFAULT_CLIENT_ERROR } from './errors';
+import { GRPCService, Request, Response } from './interfaces';
 import { shortCircuitRace } from './shortCircuitRace';
 
 export type RpcCall<TReq, TRes> = (req: Request<TReq>, ctx?: Context) => Response<TRes>;

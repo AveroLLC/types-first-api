@@ -1,18 +1,17 @@
+import {
+  Context,
+  createError,
+  DEFAULT_SERVER_ERROR,
+  HEADERS,
+  Request,
+  Service,
+} from '@types-first-api/core';
+import { ERROR_CODES_TO_HTTP_STATUS } from '@types-first-api/http-common';
 import * as express from 'express';
 import { Server as NodeHttpServer } from 'http';
 import * as _ from 'lodash';
-import {
-  Service,
-  Request,
-  Context,
-  createError,
-  HEADERS,
-  DEFAULT_SERVER_ERROR,
-} from '@types-first-api/core';
-import { ERROR_CODES_TO_HTTP_STATUS } from '@types-first-api/http-common';
 import { isArray, isString } from 'util';
-
-import { parseStreamingJson, writeStreamingJson } from './jsonStreaming';
+import { parseStreamingJson } from './jsonStreaming';
 
 const HEADER_DEADLINE = 'x-grpc-deadline';
 

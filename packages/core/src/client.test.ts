@@ -1,11 +1,9 @@
-import { DEFAULT_CLIENT_ERROR, StatusCodes } from './errors';
-import { Client, ClientMiddleware } from './client';
-import { Endpoint, Request } from './interfaces';
-import { Context } from './context';
-import * as pbjs from 'protobufjs';
-import { of, Observable, defer, race, throwError, EMPTY } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { shortCircuitRace } from './shortCircuitRace';
+import { Client } from './client';
+import { Context } from './context';
+import { StatusCodes } from './errors';
+import { Endpoint } from './interfaces';
 
 interface IncrementRequest {
   val: number;

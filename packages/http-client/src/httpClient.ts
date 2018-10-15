@@ -1,21 +1,20 @@
-import { take, catchError } from 'rxjs/operators';
-import { Subject, Observable, Subscription, EMPTY } from 'rxjs';
-import axios from 'axios';
 import {
   Client,
   ClientAddress,
   Context,
+  createError,
   DEFAULT_CLIENT_ERROR,
   GRPCService,
   HEADERS,
   IError,
   Response,
-  createError,
-  isIError,
   StatusCodes,
 } from '@types-first-api/core';
 import { getPath, HTTP_STATUS_TO_ERROR_CODES } from '@types-first-api/http-common';
+import axios from 'axios';
 import * as pbjs from 'protobufjs';
+import { EMPTY, Observable, Subject } from 'rxjs';
+import { catchError, take } from 'rxjs/operators';
 
 export class HttpClient<TService extends GRPCService<TService>> extends Client<TService> {
   private _address: string;

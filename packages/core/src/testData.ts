@@ -1,5 +1,5 @@
-import { Endpoint } from './interfaces';
 import * as pbjs from 'protobufjs';
+import { Endpoint } from './interfaces';
 
 // interfaces and service generated from the test proto
 

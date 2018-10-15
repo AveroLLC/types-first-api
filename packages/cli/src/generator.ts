@@ -1,6 +1,6 @@
+import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
 import * as ts from 'typescript';
-import * as _ from 'lodash';
 
 /*
 So you're digging around in here and want to make some changes, huh?
@@ -31,7 +31,7 @@ function initializeClientAndServer(root: pbjs.Root): ts.Statement[] {
   return [
     ts.createInterfaceDeclaration(
       [],
-      [],
+      [ts.createToken(ts.SyntaxKind.ExportKeyword)],
       serviceDefinitionsIdentifier,
       [],
       [],
@@ -213,8 +213,8 @@ function buildOneOf(jsonNode: pbjs.OneOf, name: string): ts.TypeElement {
 }
 
 function buildEnum(jsonNode: pbjs.Enum, name: string): ts.Statement {
-  const members = _.map(jsonNode.values, (i, k) => {
-    return ts.createEnumMember(k, ts.createStringLiteral(k));
+  const members = _.map(jsonNode.values, (n, k) => {
+    return ts.createEnumMember(k, ts.createNumericLiteral(`${n}`));
   });
   return ts.createEnumDeclaration(
     [],

@@ -13,8 +13,8 @@ import { normalizeGrpcError } from '@types-first-api/grpc-common';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
-import { Subject, EMPTY } from 'rxjs';
-import { take, finalize, catchError } from 'rxjs/operators';
+import { EMPTY, Subject } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 export class GrpcClient<TService extends GRPCService<TService>> extends Client<TService> {
   private _client: grpc.Client;
@@ -22,7 +22,9 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
 
   constructor(protoService: pbjs.Service, address: ClientAddress) {
     super(protoService, address);
-    const GrpcClient = grpc.loadObject(protoService) as typeof grpc.Client;
+    const GrpcClient = grpc.loadObject(protoService, {
+      enumsAsStrings: false,
+    }) as typeof grpc.Client;
     const serviceDef = (GrpcClient as any).service as grpc.ServiceDefinition<any>;
     this.methods = _.reduce(
       serviceDef,

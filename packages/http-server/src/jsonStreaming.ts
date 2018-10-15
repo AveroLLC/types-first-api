@@ -1,4 +1,4 @@
-import { Observable, Subject, from } from 'rxjs';
+import { from, Observable, Subject } from 'rxjs';
 import * as stream from 'stream';
 
 export function parseStreamingJson<T>(inputStream: NodeJS.ReadableStream): Observable<T> {

@@ -1,6 +1,6 @@
-import { Service } from './service';
-import { GRPCServiceMap } from './interfaces';
 import * as pbjs from 'protobufjs';
+import { GRPCServiceMap } from './interfaces';
+import { Service } from './service';
 
 export function serviceFactory<TServices extends GRPCServiceMap<TServices>>(
   root: pbjs.Root

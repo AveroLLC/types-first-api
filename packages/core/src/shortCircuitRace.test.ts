@@ -1,15 +1,5 @@
-import { toArray, delay, delayWhen, mergeMap, tap } from 'rxjs/operators';
-import {
-  Observable,
-  Subject,
-  of,
-  EMPTY,
-  throwError,
-  from,
-  BehaviorSubject,
-  race,
-  defer,
-} from 'rxjs';
+import { defer, EMPTY, from, Observable, of, race, throwError } from 'rxjs';
+import { delay, mergeMap, toArray } from 'rxjs/operators';
 import { shortCircuitRace } from './shortCircuitRace';
 
 describe('shortCircuitRace', () => {
@@ -97,7 +87,7 @@ describe('shortCircuitRace', () => {
     expect(tearDownHappened).toEqual(true);
   });
 
-  it.only('should work when called more than once', async () => {
+  it('should work when called more than once', async () => {
     const i1 = from([1, 2]).pipe(mergeMap((v, i) => of(v).pipe(delay((i + 1) * 150))));
     const i2 = from([3, 4]).pipe(mergeMap((v, i) => of(v).pipe(delay((i + 1) * 100))));
     const o = shortCircuitRace(i1, i2);

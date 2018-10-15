@@ -1,5 +1,5 @@
-import { isString, isError } from 'util';
 import * as _ from 'lodash';
+import { isError, isString } from 'util';
 
 export enum StatusCodes {
   Ok = 'OK',

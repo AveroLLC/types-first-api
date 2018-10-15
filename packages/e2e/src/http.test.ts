@@ -1,11 +1,9 @@
-import { of, from, NEVER } from 'rxjs';
-import { clients, services, wtf } from '../generated/Service';
-import { Client, Context, StatusCodes, Service } from '@types-first-api/core';
-import { HttpServer } from '@types-first-api/http-server';
+import { Client, Context, Service, StatusCodes } from '@types-first-api/core';
 import { HttpClient } from '@types-first-api/http-client';
-import { promises } from 'fs';
+import { HttpServer } from '@types-first-api/http-server';
+import { NEVER, of } from 'rxjs';
+import { clients, services, wtf } from '../generated/Service';
 import { later } from './util';
-import { take } from 'rxjs/operators';
 
 describe('http', () => {
   let service: Service<wtf.guys.SchedulingService>;
@@ -124,7 +122,28 @@ describe('http', () => {
       });
 
       const response$ = client.rpc.Unary(of({ id: '1' }));
-      return expect(response$.toPromise()).resolves.toEqual({ id: '1' });
+      return expect(response$.toPromise()).resolves.toMatchObject({ id: '1' });
+    });
+
+    it('should include the full data contract', () => {
+      service.registerServiceHandler('Unary', req$ => {
+        return req$;
+      });
+
+      const response$ = client.rpc.Unary(
+        of({ id: '1', dayofWeek: wtf.guys.DayOfWeek.MON })
+      );
+      return expect(response$.toPromise()).resolves.toEqual({
+        attendees: [],
+        date: null,
+        dayofWeek: wtf.guys.DayOfWeek.MON,
+        days: {},
+        duration: null,
+        id: '1',
+        location: '',
+        name: '',
+        nested: null,
+      });
     });
   });
 
@@ -210,6 +229,53 @@ describe('http', () => {
           code: StatusCodes.Deadline,
           message: `Request exceeded deadline ${deadline.toISOString()}.`,
         });
+      });
+    });
+  });
+
+  describe('serialization', () => {
+    it('should serialize enums as numbers', () => {
+      service.registerServiceHandler('Unary', req$ => {
+        return of({
+          id: '1',
+          dayofWeek: wtf.guys.DayOfWeek.WED,
+        });
+      });
+      const res$ = client.rpc.Unary(of({ id: '1' }));
+      return expect(res$.toPromise()).resolves.toMatchObject({
+        id: '1',
+        dayofWeek: 2,
+      });
+    });
+
+    it('should serialize oneofs with source correctly', () => {
+      service.registerServiceHandler('Unary', req$ => {
+        return of({
+          id: '1',
+          outlookId: 'asdf',
+        });
+      });
+      const res$ = client.rpc.Unary(of({ id: '1' }));
+      return expect(res$.toPromise()).resolves.toMatchObject({
+        id: '1',
+        source: 'outlookId',
+        outlookId: 'asdf',
+      });
+    });
+
+    it('should drop extra properties', () => {
+      service.registerServiceHandler('Unary', req$ => {
+        return of({
+          id: '1',
+          outlookId: 'asdf',
+          asdf: 'hi',
+        });
+      });
+      const res$ = client.rpc.Unary(of({ id: '1' }));
+      return expect(res$.toPromise()).resolves.toMatchObject({
+        id: '1',
+        source: 'outlookId',
+        outlookId: 'asdf',
       });
     });
   });

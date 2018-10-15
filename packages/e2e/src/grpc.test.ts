@@ -1,10 +1,9 @@
-import { later } from './util';
-import { Client, Context, StatusCodes, Service } from '@types-first-api/core';
+import { Client, Context, Service, StatusCodes } from '@types-first-api/core';
 import { GrpcClient } from '@types-first-api/grpc-client';
 import { GrpcServer } from '@types-first-api/grpc-server';
 import { NEVER, of } from 'rxjs';
-import { take } from 'rxjs/operators';
 import { clients, services, wtf } from '../generated/Service';
+import { later } from './util';
 
 describe('grpc', () => {
   let service: Service<wtf.guys.SchedulingService>;
@@ -66,7 +65,7 @@ describe('grpc', () => {
         return client.rpc.ServerStream(req$);
       });
 
-      const response$ = client.rpc.Unary(of({ id: '1' }));
+      const response$ = client.rpc.Unary(of({ id: '1', outlookId: 'hi' }));
       return expect(response$.toPromise()).rejects.toMatchObject({
         code: 'Not Implemented',
         message: "RPC Method 'ServerStream' is not implemented.",
@@ -176,6 +175,37 @@ describe('grpc', () => {
         return expect(serverContext.metadata).toMatchObject({
           hello: 'world',
         });
+      });
+    });
+  });
+
+  describe('serialization', () => {
+    it('should serialize enums as numersb', () => {
+      service.registerServiceHandler('Unary', req$ => {
+        return of({
+          id: '1',
+          dayofWeek: wtf.guys.DayOfWeek.WED,
+        });
+      });
+      const res$ = client.rpc.Unary(of({ id: '1' }));
+      return expect(res$.toPromise()).resolves.toMatchObject({
+        id: '1',
+        dayofWeek: 2,
+      });
+    });
+
+    it('should serialize oneofs with source correctly', () => {
+      service.registerServiceHandler('Unary', req$ => {
+        return of({
+          id: '1',
+          outlookId: 'asdf',
+        });
+      });
+      const res$ = client.rpc.Unary(of({ id: '1' }));
+      return expect(res$.toPromise()).resolves.toMatchObject({
+        id: '1',
+        source: 'outlookId',
+        outlookId: 'asdf',
       });
     });
   });

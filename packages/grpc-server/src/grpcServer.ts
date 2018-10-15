@@ -1,15 +1,15 @@
-import { of, Observable } from 'rxjs';
 import {
-  Service,
-  Metadata,
   Context,
-  HEADERS,
   createError,
   DEFAULT_SERVER_ERROR,
+  HEADERS,
+  Metadata,
+  Service,
 } from '@types-first-api/core';
 import { ERROR_CODES_TO_GRPC_STATUS } from '@types-first-api/grpc-common';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
+import { Observable, of } from 'rxjs';
 
 export class GrpcServer {
   private _server = new grpc.Server();
@@ -17,7 +17,9 @@ export class GrpcServer {
   constructor(...services: Service<any, any>[]) {
     _.forEach(services, service => {
       const { pbjsService } = service;
-      const grpcObj = grpc.loadObject(pbjsService);
+      const grpcObj = grpc.loadObject(pbjsService, {
+        enumsAsStrings: false,
+      });
       const serviceDef = (grpcObj as any).service as grpc.ServiceDefinition<any>;
 
       this._server.addService(
