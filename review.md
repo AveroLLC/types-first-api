@@ -1,3 +1,0 @@
-- [] `clientFactor.d.ts` has ts errors when npm installed
-- [] need to run `npm rebuild`
-- [] tests needed around cancelation with streaming responses
