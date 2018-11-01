@@ -103,14 +103,9 @@ export class Service<
       handlerNext
     );
 
-    const response$ = defer(() => stack(request, context)).pipe(
+    return defer(() => stack(request, context)).pipe(
       takeUntil(context.cancel$),
       // Will always throw a structured error
-      catchError(err => throwError(createError(err, DEFAULT_SERVER_ERROR)))
-    );
-
-    // Will always throw a structured error
-    return response$.pipe(
       catchError(err => throwError(createError(err, DEFAULT_SERVER_ERROR)))
     );
   };
