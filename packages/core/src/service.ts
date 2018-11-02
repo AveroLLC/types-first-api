@@ -1,12 +1,11 @@
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
 import { defer, Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, takeUntil } from 'rxjs/operators';
 import { Context } from './context';
 import { createError, DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
 import { GRPCService, Request, Response } from './interfaces';
 import { createMessageValidator } from './middleware/messageValidation';
-import { shortCircuitRace } from './shortCircuitRace';
 
 export interface Handler<TReq, TRes, TDependencies extends object = {}> {
   (request$: Request<TReq>, context: Context, dependencies: TDependencies): Response<
@@ -104,13 +103,9 @@ export class Service<
       handlerNext
     );
 
-    const response$ = shortCircuitRace(
-      context.cancel$,
-      defer(() => stack(request, context))
-    );
-
-    // Will always throw a structured error
-    return response$.pipe(
+    return defer(() => stack(request, context)).pipe(
+      takeUntil(context.cancel$),
+      // Will always throw a structured error
       catchError(err => throwError(createError(err, DEFAULT_SERVER_ERROR)))
     );
   };
