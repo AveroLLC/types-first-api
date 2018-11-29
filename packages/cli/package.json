@@ -19,7 +19,9 @@
   },
   "dependencies": {
     "@types-first-api/core": "^0.0.5",
+    "commander": "^2.19.0",
     "lodash": "^4.17.10",
+    "mkdirp": "^0.5.1",
     "protobufjs": "^6.8.8",
     "typescript": "^3.0.3"
   },
