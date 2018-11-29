@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/core",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Types-First API Core",
   "publishConfig": {
     "access": "public"
