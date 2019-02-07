@@ -4,10 +4,12 @@ import { Context } from './context';
 import { DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
 import { Service } from './service';
 import { pbjsService, TestService } from './testData';
+import { get } from 'lodash';
 
 interface Dependencies {
   usersSvc: {
     authenticate: () => Observable<boolean>;
+    justTen: () => number;
   };
 }
 
@@ -16,6 +18,7 @@ describe('Service', () => {
   let context: Context;
   const usersSvc = {
     authenticate: () => of(true).pipe(delay(1000)),
+    justTen: () => 10
   };
 
   beforeEach(() => {
@@ -187,6 +190,41 @@ describe('Service', () => {
           expect(args[2]).toEqual({ usersSvc });
         });
       });
+
+
+      it('invokes handler with decorated dependencies', () => {
+
+        handler.mockClear()
+        s.registerServiceHandler('increment', (req, ctx, deps) => {
+          return req.pipe(
+            map((d: any) => {
+              deps.usersSvc.justTen()
+              return { val: d.val + d.add }
+            })
+          )
+        })
+
+        const decoratingProxy = jest.fn((call) => call())
+        const middleware = jest.fn((req, ctx, deps, next, methodName) => {
+
+          const userService = {
+            ...deps.usersSvc,
+            justTen: () => decoratingProxy(deps.usersSvc.justTen)
+          }
+          let nextDeps = {...deps, usersSvc: userService}
+
+          return next(req, ctx, nextDeps)
+        })
+
+        s.addMiddleware(middleware)
+
+        const response = s.call('increment', of({ val: 10, add: 2 }), context)
+
+        return response.toPromise().then(() => {
+          expect(middleware).toHaveBeenCalledTimes(1)
+          expect(get(decoratingProxy.mock.results, '[0].value')).toEqual(10)
+        })
+      })
 
       it('catches errors thrown in middleware', () => {
         s.addMiddleware(() => {
