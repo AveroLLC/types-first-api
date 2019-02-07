@@ -6,6 +6,7 @@ import { Context } from './context';
 import { createError, DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
 import { GRPCService, Request, Response } from './interfaces';
 import { createMessageValidator } from './middleware/messageValidation';
+import { shortCircuitRace } from './shortCircuitRace'
 
 export interface Handler<TReq, TRes, TDependencies extends object = {}> {
   (request$: Request<TReq>, context: Context, dependencies: TDependencies): Response<
@@ -23,7 +24,8 @@ export interface Middleware<
     dependencies: TDependencies,
     next: (
       request$: Request<TService[keyof TService]['request']>,
-      context: Context
+      context: Context,
+      dependencies?: TDependencies
     ) => Response<TService[keyof TService]['response']>,
     methodName: keyof TService
   ): Response<TService[keyof TService]['response']>;
@@ -89,23 +91,31 @@ export class Service<
   ): Observable<TService[K]['response']> => {
     const handler = this._handlers[method] || this._notImplemented(method);
 
-    const handlerNext = (req: Request<TService[K]['request']>, ctx: Context) => {
-      return handler(req, ctx, this._dependencies);
+    const handlerNext = (
+      req: Request<TService[K]['request']>,
+      ctx: Context,
+      dependencies: TDependencies = this._dependencies
+    ) => {
+      return handler(req, ctx, dependencies);
     };
 
     const stack = _.reduceRight(
       this._middleware,
       (next, middleware) => {
-        return (req, ctx) => {
-          return middleware(req, ctx, this._dependencies, next, method);
+        return (req, ctx, dependencies = this._dependencies) => {
+          return middleware(req, ctx, dependencies, next, method);
         };
       },
       handlerNext
     );
 
-    return defer(() => stack(request, context)).pipe(
-      takeUntil(context.cancel$),
-      // Will always throw a structured error
+    const response$ = shortCircuitRace(
+      context.cancel$,
+      defer(() => stack(request, context))
+    );
+
+    // Will always throw a structured error
+    return response$.pipe(
       catchError(err => throwError(createError(err, DEFAULT_SERVER_ERROR)))
     );
   };
