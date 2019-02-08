@@ -1,12 +1,13 @@
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
 import { defer, Observable, throwError } from 'rxjs';
-import { catchError, takeUntil } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { Context } from './context';
 import { createError, DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
 import { GRPCService, Request, Response } from './interfaces';
 import { createMessageValidator } from './middleware/messageValidation';
 import { shortCircuitRace } from './shortCircuitRace'
+import { Method } from 'protobufjs'
 
 export interface Handler<TReq, TRes, TDependencies extends object = {}> {
   (request$: Request<TReq>, context: Context, dependencies: TDependencies): Response<
@@ -14,10 +15,15 @@ export interface Handler<TReq, TRes, TDependencies extends object = {}> {
   >;
 }
 
+
+type RequestDetails =  {
+  method: Method
+};
+
 export interface Middleware<
   TService extends GRPCService<TService>,
   TDependencies extends object = {}
-> {
+  > {
   (
     request$: Request<TService[keyof TService]['request']>,
     context: Context,
@@ -27,7 +33,7 @@ export interface Middleware<
       context: Context,
       dependencies?: TDependencies
     ) => Response<TService[keyof TService]['response']>,
-    methodName: keyof TService
+    requestDetails: RequestDetails
   ): Response<TService[keyof TService]['response']>;
 }
 
@@ -90,6 +96,7 @@ export class Service<
     context: Context
   ): Observable<TService[K]['response']> => {
     const handler = this._handlers[method] || this._notImplemented(method);
+    const requestDetails = { method: this.pbjsService.methods[method as string]};
 
     const handlerNext = (
       req: Request<TService[K]['request']>,
@@ -103,7 +110,7 @@ export class Service<
       this._middleware,
       (next, middleware) => {
         return (req, ctx, dependencies = this._dependencies) => {
-          return middleware(req, ctx, dependencies, next, method);
+          return middleware(req, ctx, dependencies, next, requestDetails);
         };
       },
       handlerNext

@@ -16,9 +16,9 @@ const PROTO_OPTIONS = {
 export function createMessageValidator(pbjsService: pbjs.Service): Middleware<any, any> {
   pbjsService.resolveAll();
 
-  return (req$, ctx, deps, next, methodName) => {
-    const reqMessage = pbjsService.methods[methodName as string].resolvedRequestType;
-    const resMessage = pbjsService.methods[methodName as string].resolvedResponseType;
+  return (req$, ctx, deps, next, { method }) => {
+    const reqMessage = method.resolvedRequestType;
+    const resMessage = method.resolvedResponseType;
 
     const validated$ = req$.pipe(
       map(d => {
