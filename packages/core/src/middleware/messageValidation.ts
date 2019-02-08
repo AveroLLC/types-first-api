@@ -13,8 +13,7 @@ const PROTO_OPTIONS = {
   oneofs: true, // includes virtual oneof fields set to the present field's name
 };
 
-export function createMessageValidator(pbjsService: pbjs.Service): Middleware<any, any> {
-  pbjsService.resolveAll();
+export function createMessageValidator(): Middleware<any, any> {
 
   return (req$, ctx, deps, next, { method }) => {
     const reqMessage = method.resolvedRequestType;
