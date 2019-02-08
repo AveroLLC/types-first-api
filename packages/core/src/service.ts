@@ -15,7 +15,6 @@ export interface Handler<TReq, TRes, TDependencies extends object = {}> {
   >;
 }
 
-
 type RequestDetails =  {
   method: Method
 };
@@ -63,7 +62,8 @@ export class Service<
   constructor(protoService: pbjs.Service, dependencies: TDependencies) {
     this.pbjsService = protoService;
     this._dependencies = dependencies;
-    this.addMiddleware(createMessageValidator(this.pbjsService));
+    this.pbjsService.resolveAll();
+    this.addMiddleware(createMessageValidator());
   }
 
   private _notImplemented = (methodName: keyof TService) => () => {

@@ -161,7 +161,7 @@ describe('Service', () => {
         s.registerServiceHandler('increment', handler);
       });
 
-      it('invokes middleware with requestDetails that include the of the method called', () => {
+      it('should invoke middleware with requestDetails that includes the method object with correct name called', () => {
         const middleware = jest.fn((req, ctx, deps, next, requestDetails) => {
           return next(req, ctx);
         });
