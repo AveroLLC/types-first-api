@@ -1,7 +1,7 @@
 {
   "name": "example",
   "private": true,
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,12 +9,12 @@
     "generate": "tfapi protos/Service.proto"
   },
   "dependencies": {
-    "@types-first-api/cli": "^0.0.7",
-    "@types-first-api/core": "^0.0.7",
-    "@types-first-api/grpc-client": "^0.0.7",
-    "@types-first-api/grpc-server": "^0.0.7",
-    "@types-first-api/http-client": "^0.0.7",
-    "@types-first-api/http-server": "^0.0.7",
+    "@types-first-api/cli": "^0.0.8",
+    "@types-first-api/core": "^0.0.8",
+    "@types-first-api/grpc-client": "^0.0.8",
+    "@types-first-api/grpc-server": "^0.0.8",
+    "@types-first-api/http-client": "^0.0.8",
+    "@types-first-api/http-server": "^0.0.8",
     "rxjs": "^6.3.3"
   },
   "author": "",
