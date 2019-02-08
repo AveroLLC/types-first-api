@@ -161,8 +161,8 @@ describe('Service', () => {
         s.registerServiceHandler('increment', handler);
       });
 
-      it('invokes middleware with the name of the method called', () => {
-        const middleware = jest.fn((req, ctx, deps, next, methodName) => {
+      it('should invoke middleware with requestDetails that includes the method object with correct name called', () => {
+        const middleware = jest.fn((req, ctx, deps, next, requestDetails) => {
           return next(req, ctx);
         });
         s.addMiddleware(middleware);
@@ -172,12 +172,12 @@ describe('Service', () => {
         return response.toPromise().then(() => {
           expect(middleware).toHaveBeenCalledTimes(1);
           const args = middleware.mock.calls[0];
-          expect(args[4]).toEqual('increment');
+          expect(args[4].method.name).toEqual('increment');
         });
       });
 
       it('invokes middleware with the registered dependencies', () => {
-        const middleware = jest.fn((req, ctx, deps, next, methodName) => {
+        const middleware = jest.fn((req, ctx, deps, next, requestDetails) => {
           return next(req, ctx);
         });
         s.addMiddleware(middleware);
@@ -205,7 +205,7 @@ describe('Service', () => {
         })
 
         const decoratingProxy = jest.fn((call) => call())
-        const middleware = jest.fn((req, ctx, deps, next, methodName) => {
+        const middleware = jest.fn((req, ctx, deps, next, requestDetails) => {
 
           const userService = {
             ...deps.usersSvc,
@@ -397,7 +397,7 @@ describe('Service', () => {
 
   describe('cancelation', () => {
     it('skips the stack if context is already canceled', async () => {
-      const middleware = jest.fn((req, ctx, deps, next, methodName) => {
+      const middleware = jest.fn((req, ctx, deps, next, requestDetails) => {
         return next(req, ctx);
       });
       s.addMiddleware(middleware);
