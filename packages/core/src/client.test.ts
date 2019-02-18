@@ -115,6 +115,22 @@ describe('client', () => {
       expect(callHandler).toHaveBeenCalledWith('concat', req$, context);
     });
 
+    it('should invoke the handler when an rpc method is called with just TReq interface', async () => {
+       callHandler.mockImplementationOnce((method, $req) => {
+         return $req
+       });
+      const req = {
+        val: '1',
+        add: '2',
+      };
+      const res$ = client.rpc.concat(req, context);
+
+      const result = await res$.toPromise();
+      expect(callHandler).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(req)
+    });
+
+
     it('should catch errors thrown in the handler', () => {
       callHandler.mockImplementation(() => {
         throw new Error('UH OH!');

@@ -1,13 +1,13 @@
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
-import { defer, throwError } from 'rxjs';
+import { defer, from, isObservable, of, throwError } from 'rxjs'
 import { catchError } from 'rxjs/operators';
 import { Context } from './context';
 import { createError, DEFAULT_CLIENT_ERROR } from './errors';
 import { GRPCService, Request, Response } from './interfaces';
 import { shortCircuitRace } from './shortCircuitRace';
 
-export type RpcCall<TReq, TRes> = (req: Request<TReq>, ctx?: Context) => Response<TRes>;
+export type RpcCall<TReq, TRes> = (req: Request<TReq> | TReq, ctx?: Context) => Response<TRes>;
 
 export type RpcCallMap<TService extends GRPCService<TService>> = {
   [K in keyof TService]: RpcCall<TService[K]['request'], TService[K]['response']>
@@ -72,7 +72,7 @@ export abstract class Client<TService extends GRPCService<TService>> {
 
   private invokeCall = <K extends keyof TService>(
     methodName: K,
-    request$: Request<TService[K]['request']>,
+    request$: Request<TService[K]['request']> | Request<TService[K]['request']>,
     context: Context
   ): Response<TService[K]['response']> => {
     // TODO:
@@ -94,7 +94,7 @@ export abstract class Client<TService extends GRPCService<TService>> {
 
     const response$ = shortCircuitRace(
       context.cancel$,
-      defer(() => stack(request$, context))
+      defer(() => stack(isObservable(request$) ? request$ : of(request$), context))
     );
 
     // Will always throw a structured error
