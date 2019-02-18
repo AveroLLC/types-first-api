@@ -14,7 +14,9 @@
     "@types-first-api/grpc-client": "^0.0.8",
     "@types-first-api/grpc-server": "^0.0.8",
     "@types-first-api/http-client": "^0.0.8",
-    "@types-first-api/http-server": "^0.0.8",
+    "@types-first-api/http-server": "^0.0.8"
+  },
+  "peerDependencies": {
     "rxjs": "^6.3.3"
   },
   "author": "",

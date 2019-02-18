@@ -18,11 +18,11 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@types-first-api/core": "^0.0.8",
-    "grpc": "^1.15.1",
-    "lodash": "^4.17.11"
+    "lodash": "^4.17.11",
+    "grpc": "^1.15.1"
   },
   "peerDependencies": {
-    "grpc": "^1.15.1"
+    "rxjs": "^6.3.3"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.116"
