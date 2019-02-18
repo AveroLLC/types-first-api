@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
-import { defer, from, isObservable, Observable, of, throwError } from 'rxjs'
+import { defer, isObservable, Observable, of, throwError } from 'rxjs'
 import { catchError } from 'rxjs/operators';
 import { Context } from './context';
 import { createError, DEFAULT_CLIENT_ERROR } from './errors';
