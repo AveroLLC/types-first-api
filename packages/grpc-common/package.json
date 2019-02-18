@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/grpc-common",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Types-First API common code for grpc client and server",
   "publishConfig": {
     "access": "public"
@@ -17,9 +17,9 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@types-first-api/core": "^0.0.8",
-    "lodash": "^4.17.11",
-    "grpc": "^1.15.1"
+    "@types-first-api/core": "^0.0.9",
+    "grpc": "^1.15.1",
+    "lodash": "^4.17.11"
   },
   "peerDependencies": {
     "rxjs": "^6.3.3"
