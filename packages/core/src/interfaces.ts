@@ -17,4 +17,4 @@ export type GRPCServiceMap<TServices> = {
 
 export type Request<TReq> = Observable<TReq>;
 
-export type Response<TRes> = Observable<TRes> | Promise<TRes>;
+export type Response<TRes> = Observable<TRes>;

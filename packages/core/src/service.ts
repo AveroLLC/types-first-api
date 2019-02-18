@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
-import { defer, Observable, throwError, from, isObservable } from 'rxjs'
+import { defer, throwError, from, isObservable } from 'rxjs'
 import { catchError } from 'rxjs/operators';
 import { Context } from './context';
 import { createError, DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
@@ -12,7 +12,7 @@ import { Method } from 'protobufjs'
 export interface Handler<TReq, TRes, TDependencies extends object = {}> {
   (request$: Request<TReq>, context: Context, dependencies: TDependencies): Response<
     TRes
-  >;
+  > | Promise<TRes>;
 }
 
 type RequestDetails =  {
@@ -33,7 +33,7 @@ export interface Middleware<
       dependencies?: TDependencies
     ) => Response<TService[keyof TService]['response']>,
     requestDetails: RequestDetails
-  ): Observable<TService[keyof TService]['response']>;
+  ): Response<TService[keyof TService]['response']>;
 }
 
 export type HandlerMap<
@@ -94,7 +94,7 @@ export class Service<
     method: K,
     request: Request<TService[K]['request']>,
     context: Context
-  ): Observable<TService[K]['response']> => {
+  ): Response<TService[K]['response']> => {
     const handler = this._handlers[method] || this._notImplemented(method);
     const requestDetails = { method: this.pbjsService.methods[method as string]};
 
