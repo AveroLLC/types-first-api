@@ -1,4 +1,4 @@
-import * as pbjs from 'protobufjs';
+import { from } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { IError, StatusCodes } from '../errors';
 import { Middleware } from '../service';
@@ -35,7 +35,7 @@ export function createMessageValidator(): Middleware<any, any> {
         return reqMessage.toObject(reqMessage.create(d));
       })
     );
-    return next(validated$, ctx).pipe(
+    return from(next(validated$, ctx)).pipe(
       map(d => {
         return resMessage.toObject(resMessage.create(d), PROTO_OPTIONS);
       })

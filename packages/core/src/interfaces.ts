@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs'
 
 export interface Metadata {
   [key: string]: string;
@@ -17,4 +17,4 @@ export type GRPCServiceMap<TServices> = {
 
 export type Request<TReq> = Observable<TReq>;
 
-export type Response<TRes> = Observable<TRes>;
+export type Response<TRes> = Observable<TRes> | Promise<TRes>;

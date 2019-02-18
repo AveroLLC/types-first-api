@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
-import { defer, Observable, throwError } from 'rxjs';
+import { defer, Observable, throwError, from } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Context } from './context';
 import { createError, DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
@@ -118,7 +118,7 @@ export class Service<
 
     const response$ = shortCircuitRace(
       context.cancel$,
-      defer(() => stack(request, context))
+      defer(() => from(stack(request, context)))
     );
 
     // Will always throw a structured error
