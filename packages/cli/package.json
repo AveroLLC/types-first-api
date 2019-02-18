@@ -22,8 +22,11 @@
     "commander": "^2.19.0",
     "lodash": "^4.17.10",
     "mkdirp": "^0.5.1",
+    "typescript": "3.0.3"
+  },
+  "peerDependencies": {
     "protobufjs": "^6.8.8",
-    "typescript": "^3.0.3"
+    "rxjs": "^6.3.3"
   },
   "author": "",
   "license": "Apache-2.0",

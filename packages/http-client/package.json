@@ -21,8 +21,9 @@
     "@types-first-api/core": "^0.0.8",
     "@types-first-api/http-common": "^0.0.8",
     "axios": "^0.18.0",
-    "lodash": "^4.17.10",
-    "protobufjs": "^6.8.8",
+    "lodash": "^4.17.10"
+  },
+  "peerDependencies": {
     "rxjs": "^6.3.3"
   }
 }
