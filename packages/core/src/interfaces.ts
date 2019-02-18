@@ -1,4 +1,4 @@
-import { Observable, ObservableInput } from 'rxjs'
+import { Observable } from 'rxjs'
 
 export interface Metadata {
   [key: string]: string;
