@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/http-client",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Types-First API HTTP client",
   "publishConfig": {
     "access": "public"
@@ -18,8 +18,8 @@
   "license": "Apache-2.0",
   "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac",
   "dependencies": {
-    "@types-first-api/core": "^0.0.9",
-    "@types-first-api/http-common": "^0.0.9",
+    "@types-first-api/core": "^0.0.10",
+    "@types-first-api/http-common": "^0.0.10",
     "axios": "^0.18.0",
     "lodash": "^4.17.10"
   },
