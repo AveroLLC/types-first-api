@@ -145,6 +145,23 @@ describe('Service', () => {
             expect(concatRes).toEqual(expectedConcatResult);
           });
       });
+
+      it('should handle handlers that return Promises', () => {
+        const handler = jest.fn(async (req, ctx) => {
+          return { val: 12 };
+        });
+
+        s.registerServiceHandler('increment', handler);
+        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+
+        return response.toPromise().then(() => {
+          expect(handler).toHaveBeenCalledTimes(1);
+          const args = handler.mock.calls[0];
+          expect(args[2]).toEqual({ usersSvc });
+        });
+
+      })
+
     });
 
     describe('middleware', () => {
