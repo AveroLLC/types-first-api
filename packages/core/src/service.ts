@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
-import { defer, Observable, throwError, from } from 'rxjs';
+import { defer, Observable, throwError, from, isObservable } from 'rxjs'
 import { catchError } from 'rxjs/operators';
 import { Context } from './context';
 import { createError, DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
@@ -33,7 +33,7 @@ export interface Middleware<
       dependencies?: TDependencies
     ) => Response<TService[keyof TService]['response']>,
     requestDetails: RequestDetails
-  ): Response<TService[keyof TService]['response']>;
+  ): Observable<TService[keyof TService]['response']>;
 }
 
 export type HandlerMap<
@@ -103,7 +103,8 @@ export class Service<
       ctx: Context,
       dependencies: TDependencies = this._dependencies
     ) => {
-      return handler(req, ctx, dependencies);
+      const handlerResult = handler(req, ctx, dependencies)
+      return isObservable(handlerResult) ? handlerResult : from(handlerResult);
     };
 
     const stack = _.reduceRight(
@@ -118,7 +119,7 @@ export class Service<
 
     const response$ = shortCircuitRace(
       context.cancel$,
-      defer(() => from(stack(request, context)))
+      defer(() => stack(request, context))
     );
 
     // Will always throw a structured error
