@@ -132,7 +132,7 @@ export class Service<
     return this.pbjsService.fullName.slice(1);
   };
 
-  getMethodNames = (): string[] => {
-    return this.pbjsService.methodsArray.map(m => m.name);
+  getMethodNames = (): Array<keyof TService> => {
+    return this.pbjsService.methodsArray.map(m => m.name) as  Array<keyof TService>;
   };
 }
