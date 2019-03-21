@@ -34,12 +34,7 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
 
   constructor(private protoService: pbjs.Service, private address: ClientAddress) {
     super(protoService, address);
-    this._clientPool = _.range(this.CONNECTION_POOL_SIZE).map(i => {
-      return {
-        client: new GrpcClient<TService>(protoService, address),
-        initTime: Date.now()
-      }
-    });
+    this._clientPool = _.range(this.CONNECTION_POOL_SIZE).map(() => this.createPoolEntry());
   }
 
   _call<K extends keyof TService>(methodName: K, req$: Observable<TService[K]["request"]>, ctx: Context): Observable<TService[K]["response"]> {
@@ -53,10 +48,7 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
     this._nextPoolIndex = (++this._nextPoolIndex) % this.CONNECTION_POOL_SIZE;
 
     if (nextEntry.initTime + this.MAX_CLIENT_LIFE_MS >= Date.now()) {
-      const replacement = {
-        client: new GrpcClient<TService>(this.protoService, this.address),
-        initTime: Date.now()
-      };
+      const replacement = this.createPoolEntry();
       this._clientPool[index] = replacement;
       this.shutdownOnIdle(nextEntry);
 
@@ -64,6 +56,13 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
     }
 
     return nextEntry.client;
+  };
+
+  private createPoolEntry = () => {
+    return {
+      client: new GrpcClient<TService>(this.protoService, this.address),
+      initTime: Date.now()
+    };
   };
 
   private shutdownOnIdle = (entry: PoolEntry<TService>) => {
