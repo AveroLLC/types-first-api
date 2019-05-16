@@ -17,8 +17,8 @@ import { EMPTY, Subject } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 export class GrpcClient<TService extends GRPCService<TService>> extends Client<TService> {
-  private _client: grpc.Client;
-  private methods: Record<keyof TService, grpc.MethodDefinition<any, any>>;
+  private readonly _client: grpc.Client;
+  private readonly methods: Record<keyof TService, grpc.MethodDefinition<any, any>>;
 
   constructor(protoService: pbjs.Service, address: ClientAddress) {
     super(protoService, address);
@@ -36,6 +36,10 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
     ) as Record<keyof TService, grpc.MethodDefinition<any, any>>;
     const addressString = `${address.host}:${address.port}`;
     this._client = new GrpcClient(addressString, grpc.credentials.createInsecure());
+  }
+
+  public getClient(): grpc.Client {
+    return this._client;
   }
 
   _call<K extends keyof TService>(
