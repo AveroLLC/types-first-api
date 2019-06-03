@@ -15,6 +15,18 @@ export class GrpcServer {
   private _server = new grpc.Server();
 
   constructor(...services: Service<any, any>[]) {
+    this.addServicesToServer(services)
+  }
+
+  static createWithOptions = (options: Record<string, any>, ...services: Service<any, any>[]) => {
+    const server = new grpc.Server(options);
+    const instance = new GrpcServer();
+    instance._server = server;
+    instance.addServicesToServer(services);
+    return instance;
+  }
+
+  protected addServicesToServer = (services: Service<any, any>[]) => {
     _.forEach(services, service => {
       const { pbjsService } = service;
       const grpcObj = grpc.loadObject(pbjsService, {
@@ -40,6 +52,7 @@ export class GrpcServer {
       );
     });
   }
+
 
   bind = async (opts: { port: number; host?: string }) => {
     let { host, port } = opts;
