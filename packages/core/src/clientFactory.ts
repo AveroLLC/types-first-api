@@ -10,14 +10,15 @@ export function clientFactory<TServices extends GRPCServiceMap<TServices>>(
   function create<K extends Extract<keyof TServices, string>>(
     serviceName: K,
     address: ClientAddress,
-    ClientImpl: ClientConstructor<TServices[K]>
+    ClientImpl: ClientConstructor<TServices[K]>,
+    options?: Record<string, any>
   ) {
     const pbjsService = root.lookupService(serviceName);
     if (pbjsService == null) {
       throw new Error(`Unable to create instance of unknown service: ${serviceName}`);
     }
 
-    return new ClientImpl(pbjsService, address);
+    return new ClientImpl(pbjsService, address, options);
   }
 
   return { create };

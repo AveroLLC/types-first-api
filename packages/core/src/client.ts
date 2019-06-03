@@ -27,7 +27,8 @@ export interface ClientMiddleware<TService extends GRPCService<TService>> {
 
 export type ClientConstructor<TService extends GRPCService<TService>> = new (
   protoService: pbjs.Service,
-  address: ClientAddress
+  address: ClientAddress,
+  options?: Record<string, any>
 ) => Client<TService>;
 
 export interface ClientAddress {
@@ -39,10 +40,12 @@ export abstract class Client<TService extends GRPCService<TService>> {
   private _middleware: ClientMiddleware<TService>[] = [];
 
   protected pbjsService: pbjs.Service;
+  protected options:  Record<string, any> = {};
   rpc: RpcCallMap<TService>;
 
-  constructor(protoService: pbjs.Service, address: ClientAddress) {
+  constructor(protoService: pbjs.Service, address: ClientAddress, options: Record<string, any> = {}) {
     this.pbjsService = protoService;
+    this.options = options;
     this.rpc = _.mapValues<Record<string, pbjs.Method>, RpcCall<any, any>>(
       protoService.methods,
       (m, methodName) => {
