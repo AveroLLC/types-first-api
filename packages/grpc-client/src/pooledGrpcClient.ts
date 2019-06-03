@@ -5,12 +5,10 @@ import * as pbjs from 'protobufjs';
 import {Observable} from 'rxjs';
 import {GrpcClient} from "./grpcClient";
 
-
 interface PoolEntry<TService extends GRPCService<TService>> {
   initTime: number,
   client: GrpcClient<TService>
 }
-
 
 /*
   Creates a pool of GrpcClients that allow for connection expiration and rotation between a set of clients.
@@ -32,8 +30,8 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
 
   private _nextPoolIndex = 0;
 
-  constructor(private protoService: pbjs.Service, private address: ClientAddress) {
-    super(protoService, address);
+  constructor(private protoService: pbjs.Service, private address: ClientAddress, options: Record<string, any> = {}) {
+    super(protoService, address, options);
     this._clientPool = _.range(this.CONNECTION_POOL_SIZE).map(() => this.createPoolEntry());
   }
 
@@ -60,7 +58,7 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
 
   private createPoolEntry = () => {
     return {
-      client: new GrpcClient<TService>(this.protoService, this.address),
+      client: new GrpcClient<TService>(this.protoService, this.address, this.options),
       initTime: Date.now()
     };
   };

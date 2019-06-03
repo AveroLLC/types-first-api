@@ -20,11 +20,12 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
   private readonly _client: grpc.Client;
   private readonly methods: Record<keyof TService, grpc.MethodDefinition<any, any>>;
 
-  constructor(protoService: pbjs.Service, address: ClientAddress) {
-    super(protoService, address);
+  constructor(protoService: pbjs.Service, address: ClientAddress, options: Record<string, any> = {}) {
+    super(protoService, address, options);
     const GrpcClient = grpc.loadObject(protoService, {
       enumsAsStrings: false,
     }) as typeof grpc.Client;
+
     const serviceDef = (GrpcClient as any).service as grpc.ServiceDefinition<any>;
     this.methods = _.reduce(
       serviceDef,
@@ -35,7 +36,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       {}
     ) as Record<keyof TService, grpc.MethodDefinition<any, any>>;
     const addressString = `${address.host}:${address.port}`;
-    this._client = new GrpcClient(addressString, grpc.credentials.createInsecure());
+    this._client = new GrpcClient(addressString, grpc.credentials.createInsecure(), options);
   }
 
   public getClient(): grpc.Client {
