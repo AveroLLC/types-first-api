@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/http-server",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Types-First API Http Server implementation",
   "publishConfig": {
     "access": "public"
@@ -15,8 +15,8 @@
     "prepare": "tsc"
   },
   "dependencies": {
-    "@types-first-api/core": "^0.0.14",
-    "@types-first-api/http-common": "^0.0.14",
+    "@types-first-api/core": "^0.0.15",
+    "@types-first-api/http-common": "^0.0.15",
     "express": "^4.16.3",
     "lodash": "^4.17.10",
     "protobufjs": "^6.8.8",
