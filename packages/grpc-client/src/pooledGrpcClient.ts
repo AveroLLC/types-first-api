@@ -82,13 +82,14 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
   };
 
   private shutdownOnIdle = (entry: PoolEntry<TService>) => {
-    const channel = entry.client.getClient().getChannel();
-    if(channel.getConnectivityState(false) === grpc.connectivityState.READY) {
-      // allow existing requests to drain before closing channel
-      setTimeout(() => {
-        channel.close();
-      }, this.MAX_SHUTDOWN_WAIT)
-    }
+      const channel = entry.client.getClient().getChannel();
+      return channel.getConnectivityState(false) === grpc.connectivityState.READY ?
+          // allow existing requests to drain before closing channel
+          setTimeout(() => {
+              channel.close();
+          }, this.MAX_SHUTDOWN_WAIT)
+          :
+          channel.close();
   };
 
 }
