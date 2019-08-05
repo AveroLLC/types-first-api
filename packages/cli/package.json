@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/cli",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Types-First API CLI tool",
   "publishConfig": {
     "access": "public"
@@ -18,7 +18,7 @@
     "tfapi": "dest/index.js"
   },
   "dependencies": {
-    "@types-first-api/core": "^0.0.15",
+    "@types-first-api/core": "^0.0.16",
     "commander": "^2.19.0",
     "lodash": "^4.17.10",
     "mkdirp": "^0.5.1",
