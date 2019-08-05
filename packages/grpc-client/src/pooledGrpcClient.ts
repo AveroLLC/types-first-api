@@ -1,13 +1,15 @@
-import {Client, ClientAddress, Context, GRPCService,} from '@types-first-api/core';
-import * as grpc from 'grpc';
+import {Client, ClientAddress, Context, GRPCService, IError, StatusCodes} from '@types-first-api/core';
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
 import {Observable} from 'rxjs';
 import {GrpcClient} from "./grpcClient";
+import {catchError} from "rxjs/operators";
+import * as grpc from "grpc";
 
 interface PoolEntry<TService extends GRPCService<TService>> {
   initTime: number,
-  client: GrpcClient<TService>
+  client: GrpcClient<TService>,
+  index: number
 }
 
 /*
@@ -15,14 +17,14 @@ interface PoolEntry<TService extends GRPCService<TService>> {
 
   By default, the GrpcClient will create a single channel (HTTP/2 connection), which means that any HTTP/1.1 or TCP
   load balancers will not be able to distribute requests from this client to multiple backing service instances.
- 
+
  */
 export class PooledGrpcClient<TService extends GRPCService<TService>> extends Client<TService> {
 
   // The maximum time for a GrpcClient to be used by the application
-  private readonly MAX_CLIENT_LIFE_MS = 1000;
-  // Wait for up to 90 seconds for a connection to change states to idle before shutting down
-  private readonly MAX_SHUTDOWN_WAIT = 1000 * 90;
+  private readonly MAX_CLIENT_LIFE_MS = 30e3;
+  // Wait for up to 60 seconds before closing a READY channel so no requests are terminated prematurely
+  private readonly MAX_SHUTDOWN_WAIT = 12e3;
 
   private readonly CONNECTION_POOL_SIZE = 12;
 
@@ -32,51 +34,62 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
 
   constructor(private protoService: pbjs.Service, private address: ClientAddress, options: Record<string, any> = {}) {
     super(protoService, address, options);
-    this._clientPool = _.range(this.CONNECTION_POOL_SIZE).map(() => this.createPoolEntry());
+    this._clientPool = _.range(this.CONNECTION_POOL_SIZE).map((_, index) => this.createPoolEntry(index));
   }
 
   _call<K extends keyof TService>(methodName: K, req$: Observable<TService[K]["request"]>, ctx: Context): Observable<TService[K]["response"]> {
-    return this.getNextClient()._call(methodName, req$, ctx);
+    const nextPoolEntry = this.getNextClient();
+    return nextPoolEntry.client._call(methodName, req$, ctx).pipe(
+        catchError((err: IError) => {
+          // grpc status UNAVAILABLE is returned from a bad channel connection
+          if (err.code === StatusCodes.Unavailable) {
+            return this.replaceClient(nextPoolEntry.index).client._call(methodName, req$, ctx);
+          }
+          throw err;
+        })
+    )
   }
 
-  private getNextClient = (): GrpcClient<TService> => {
+  private replaceClient = (index: number) : PoolEntry<TService> => {
+    const entry = this._clientPool[index];
+    const replacement = this.createPoolEntry(index);
+    this._clientPool[index] = replacement;
+    this.shutdownOnIdle(entry);
+
+    return replacement;
+  };
+
+  private getNextClient = (): PoolEntry<TService> => {
     const index = this._nextPoolIndex;
     const nextEntry: PoolEntry<TService> = this._clientPool[index];
 
     this._nextPoolIndex = (++this._nextPoolIndex) % this.CONNECTION_POOL_SIZE;
 
-    if (nextEntry.initTime + this.MAX_CLIENT_LIFE_MS >= Date.now()) {
-      const replacement = this.createPoolEntry();
-      this._clientPool[index] = replacement;
-      this.shutdownOnIdle(nextEntry);
-
-      return replacement.client;
+    // check if we need to refresh the channel
+    if (nextEntry.initTime + this.MAX_CLIENT_LIFE_MS < Date.now()) {
+      return this.replaceClient(index);
     }
 
-    return nextEntry.client;
+    return nextEntry;
   };
 
-  private createPoolEntry = () => {
+  private createPoolEntry = (index: number) : PoolEntry<TService> => {
     return {
       client: new GrpcClient<TService>(this.protoService, this.address, this.options),
-      initTime: Date.now()
+      initTime: Date.now(),
+      index
     };
   };
 
   private shutdownOnIdle = (entry: PoolEntry<TService>) => {
-    const channel = entry.client.getClient().getChannel();
-    channel.watchConnectivityState(channel.getConnectivityState(false), this.MAX_SHUTDOWN_WAIT, (err) => {
-      if (err) {
-        console.log("Channel failed to transition to a different state in allotted time frame");
-      }
-      // Only shutdown a client if it is IDLE.
-      if (channel.getConnectivityState(false) === grpc.connectivityState.IDLE) {
-        entry.client.getClient().close();
-        return;
-      }
-      // If we didn't get the transition we want, try again
-      this.shutdownOnIdle(entry);
-    });
+      const channel = entry.client.getClient().getChannel();
+      return channel.getConnectivityState(false) === grpc.connectivityState.READY ?
+          // allow existing requests to drain before closing channel
+          setTimeout(() => {
+              channel.close();
+          }, this.MAX_SHUTDOWN_WAIT)
+          :
+          channel.close();
   };
 
 }
