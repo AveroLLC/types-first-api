@@ -24,9 +24,9 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
   // The maximum time for a GrpcClient to be used by the application
   private readonly MAX_CLIENT_LIFE_MS = 30e3;
   // Wait for up to 60 seconds before closing a READY channel so no requests are terminated prematurely
-  private readonly MAX_SHUTDOWN_WAIT = 60e3;
+  private readonly MAX_SHUTDOWN_WAIT = 12e3;
 
-  private readonly CONNECTION_POOL_SIZE = 32;
+  private readonly CONNECTION_POOL_SIZE = 12;
 
   private readonly _clientPool: PoolEntry<TService>[] = [];
 
