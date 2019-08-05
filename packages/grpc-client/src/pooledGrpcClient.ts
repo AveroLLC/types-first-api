@@ -45,7 +45,7 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
 
     this._nextPoolIndex = (++this._nextPoolIndex) % this.CONNECTION_POOL_SIZE;
 
-    if (nextEntry.initTime + this.MAX_CLIENT_LIFE_MS >= Date.now()) {
+    if (nextEntry.initTime + this.MAX_CLIENT_LIFE_MS < Date.now()) {
       const replacement = this.createPoolEntry();
       this._clientPool[index] = replacement;
       this.shutdownOnIdle(nextEntry);
