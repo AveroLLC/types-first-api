@@ -1,5 +1,5 @@
 import {
-  Client,
+  Client as BaseClient,
   ClientAddress,
   Context,
   DEFAULT_CLIENT_ERROR,
@@ -11,70 +11,82 @@ import {
   StatusCodes
 } from "@types-first-api/core";
 import { normalizeGrpcError } from "@types-first-api/grpc-common";
-import * as grpc from "grpc";
+import {
+  CallOptions,
+  Client,
+  credentials,
+  loadObject,
+  makeClientConstructor,
+  Metadata,
+  StatusObject
+} from "@grpc/grpc-js";
+import {
+  loadSync,
+  MethodDefinition,
+  ServiceDefinition
+} from "@grpc/proto-loader";
 import * as _ from "lodash";
-import * as pbjs from "protobufjs";
-import { EMPTY, Observable, Subject, throwError } from "rxjs";
-import { catchError, retryWhen, mergeMap, map } from "rxjs/operators";
+import { EMPTY, Subject } from "rxjs";
+import { catchError } from "rxjs/operators";
+import {ChannelOptions} from "@grpc/grpc-js/build/src/channel-options";
+import {propagate} from "grpc";
+import {Status} from "@grpc/grpc-js/build/src/constants";
 
-export class GrpcClient<TService extends GRPCService<TService>> extends Client<
-  TService
-> {
-  private _client: grpc.Client;
-  private readonly regenerateClient: () => void;
-  private readonly methods: Record<
-    keyof TService,
-    grpc.MethodDefinition<any, any>
+type GenericServiceDefinition<TService extends GRPCService<TService>> = {
+  [K in keyof TService]: MethodDefinition<
+    TService[keyof TService]["request"],
+    TService[keyof TService]["request"]
   >;
+};
+
+export class GrpcClient<
+  TService extends GRPCService<TService>
+> extends BaseClient<TService> {
+  private _client: Client;
+  private readonly regenerateClient: () => void;
+  private readonly methods: GenericServiceDefinition<TService>;
 
   constructor(
-    protoService: pbjs.Service,
+    protoService: GenericServiceDefinition<TService>,
+    serviceName: string,
     address: ClientAddress,
-    options: Record<string, any> = {}
+    options: Partial<ChannelOptions>
   ) {
     super(protoService, address, options);
-    const GrpcClientConstructor = grpc.loadObject(protoService, {
-      enumsAsStrings: false
-    }) as typeof grpc.Client;
+    const serviceClientConstructor = makeClientConstructor(
+      protoService,
+      serviceName
+    );
 
-    const serviceDef = (GrpcClientConstructor as any)
-      .service as grpc.ServiceDefinition<any>;
-    this.methods = _.reduce(
-      serviceDef,
-      (methods, method) => {
-        methods[(method as any).originalName] = method;
-        return methods;
-      },
-      {}
-    ) as Record<keyof TService, grpc.MethodDefinition<any, any>>;
+    this.methods = protoService;
 
     this.regenerateClient = () => {
-      this._client = new GrpcClientConstructor(
+      this._client = new serviceClientConstructor(
         `${address.host}:${address.port}`,
-        grpc.credentials.createInsecure(),
+        credentials.createInsecure(),
         options
       );
     };
     this.regenerateClient();
   }
 
-  public getClient(): grpc.Client {
+  public getClient(): Client {
     return this._client;
   }
 
   _call<K extends keyof TService>(
-      methodName: K,
-      request$: Request<TService[K]["request"]>,
-      ctx: Context
+    methodName: K,
+    request$: Request<TService[K]["request"]>,
+    ctx: Context
   ): Response<TService[K]["response"]> {
-    return this.callAndRetryOnUnavailable(methodName,request$, ctx, 0);
+    return this.callAndRetryOnUnavailable(methodName, request$, ctx, 0);
   }
 
   private callAndRetryOnUnavailable = <K extends keyof TService>(
     methodName: K,
     request$: Request<TService[K]["request"]>,
     ctx: Context,
-    retries:number
+    retries: number
   ): Response<TService[K]["response"]> => {
     const { path, requestSerialize, responseDeserialize } = this.methods[
       methodName
@@ -119,9 +131,9 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<
 
     // errors are dealt with in the status handler
     call.on("error", _.noop);
-    call.on("status", (status: grpc.StatusObject) => {
+    call.on("status", (status: StatusObject) => {
       cancelSubscription.unsubscribe();
-      if (status.code === grpc.status.OK) {
+      if (status.code === Status.OK) {
         return response$.complete();
       }
       const serializedError = status.metadata.get(HEADERS.TRAILER_ERROR);
@@ -143,17 +155,16 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<
   private createGrpcOptionsAndMetadata = (
     ctx: Context
   ): {
-    metadata: grpc.Metadata;
-    callOptions: grpc.CallOptions;
+    metadata: Metadata;
+    callOptions: CallOptions;
   } => {
-    const metadata = new grpc.Metadata();
+    const metadata = new Metadata();
     _.forEach(ctx.metadata, (v, k) => {
       metadata.set(k, v);
     });
 
-    // @ts-ignore - typings on call callOptions are wrong
-    const callOptions: grpc.CallOptions = {
-      propagate_flags: grpc.propagate.DEFAULTS
+    const callOptions: CallOptions = {
+      propagate_flags: propagate.DEFAULTS
     };
     if (ctx.deadline != null) {
       callOptions.deadline = ctx.deadline;
