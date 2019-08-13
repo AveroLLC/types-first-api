@@ -1,15 +1,22 @@
-import {Client, ClientAddress, Context, GRPCService, IError, StatusCodes} from '@types-first-api/core';
-import * as _ from 'lodash';
-import * as pbjs from 'protobufjs';
-import {Observable} from 'rxjs';
-import {GrpcClient} from "./grpcClient";
-import {catchError} from "rxjs/operators";
+import {
+  Client,
+  ClientAddress,
+  Context,
+  GRPCService,
+  IError,
+  StatusCodes
+} from "@types-first-api/core";
+import * as _ from "lodash";
+import * as pbjs from "protobufjs";
+import { Observable } from "rxjs";
+import { GrpcClient } from "./grpcClient";
+import { catchError } from "rxjs/operators";
 import * as grpc from "grpc";
 
 interface PoolEntry<TService extends GRPCService<TService>> {
-  initTime: number,
-  client: GrpcClient<TService>,
-  index: number
+  initTime: number;
+  client: GrpcClient<TService>;
+  index: number;
 }
 
 /*
@@ -19,42 +26,63 @@ interface PoolEntry<TService extends GRPCService<TService>> {
   load balancers will not be able to distribute requests from this client to multiple backing service instances.
 
  */
-export class PooledGrpcClient<TService extends GRPCService<TService>> extends Client<TService> {
 
+export interface PooledGrpcClientOptions {
+  maxClientLifeMs?: number;
+  connectionPoolSize?: number;
+}
+
+export class PooledGrpcClient<
+  TService extends GRPCService<TService>
+> extends Client<TService> {
   // The maximum time for a GrpcClient to be used by the application
-  private readonly MAX_CLIENT_LIFE_MS = 30e3;
-  // Wait for up to 60 seconds before closing a READY channel so no requests are terminated prematurely
-  private readonly MAX_SHUTDOWN_WAIT = 12e3;
-
-  private readonly CONNECTION_POOL_SIZE = 12;
+  private readonly MAX_CLIENT_LIFE_MS;
+  private readonly CONNECTION_POOL_SIZE;
 
   private readonly _clientPool: PoolEntry<TService>[] = [];
 
   private _nextPoolIndex = 0;
 
-  constructor(private protoService: pbjs.Service, private address: ClientAddress, options: Record<string, any> = {}) {
+  constructor(
+    private protoService: pbjs.Service,
+    private address: ClientAddress,
+    options: Record<string, any> & PooledGrpcClientOptions = {}
+  ) {
     super(protoService, address, options);
-    this._clientPool = _.range(this.CONNECTION_POOL_SIZE).map((_, index) => this.createPoolEntry(index));
+    this.CONNECTION_POOL_SIZE = options.connectionPoolSize || 12;
+    this.MAX_CLIENT_LIFE_MS = options.maxClientLifeMs || 30e3;
+
+    this._clientPool = _.range(this.CONNECTION_POOL_SIZE).map((_, index) =>
+      this.createPoolEntry(index)
+    );
   }
 
-  _call<K extends keyof TService>(methodName: K, req$: Observable<TService[K]["request"]>, ctx: Context): Observable<TService[K]["response"]> {
+  _call<K extends keyof TService>(
+    methodName: K,
+    req$: Observable<TService[K]["request"]>,
+    ctx: Context
+  ): Observable<TService[K]["response"]> {
     const nextPoolEntry = this.getNextClient();
     return nextPoolEntry.client._call(methodName, req$, ctx).pipe(
-        catchError((err: IError) => {
-          // grpc status UNAVAILABLE is returned from a bad channel connection
-          if (err.code === StatusCodes.Unavailable) {
-            return this.replaceClient(nextPoolEntry.index).client._call(methodName, req$, ctx);
-          }
-          throw err;
-        })
-    )
+      catchError((err: IError) => {
+        // grpc status UNAVAILABLE is returned from a bad channel connection
+        if (err.code === StatusCodes.Unavailable) {
+          return this.replaceClient(nextPoolEntry.index).client._call(
+            methodName,
+            req$,
+            ctx
+          );
+        }
+        throw err;
+      })
+    );
   }
 
-  private replaceClient = (index: number) : PoolEntry<TService> => {
+  private replaceClient = (index: number): PoolEntry<TService> => {
     const entry = this._clientPool[index];
     const replacement = this.createPoolEntry(index);
     this._clientPool[index] = replacement;
-    this.shutdownOnIdle(entry);
+    entry.client.getClient().close(); // closing a client does not close a channel, so existing requests will still go through
 
     return replacement;
   };
@@ -63,7 +91,7 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
     const index = this._nextPoolIndex;
     const nextEntry: PoolEntry<TService> = this._clientPool[index];
 
-    this._nextPoolIndex = (++this._nextPoolIndex) % this.CONNECTION_POOL_SIZE;
+    this._nextPoolIndex = ++this._nextPoolIndex % this.CONNECTION_POOL_SIZE;
 
     // check if we need to refresh the channel
     if (nextEntry.initTime + this.MAX_CLIENT_LIFE_MS < Date.now()) {
@@ -73,23 +101,15 @@ export class PooledGrpcClient<TService extends GRPCService<TService>> extends Cl
     return nextEntry;
   };
 
-  private createPoolEntry = (index: number) : PoolEntry<TService> => {
+  private createPoolEntry = (index: number): PoolEntry<TService> => {
     return {
-      client: new GrpcClient<TService>(this.protoService, this.address, this.options),
+      client: new GrpcClient<TService>(
+        this.protoService,
+        this.address,
+        this.options
+      ),
       initTime: Date.now(),
       index
     };
   };
-
-  private shutdownOnIdle = (entry: PoolEntry<TService>) => {
-      const channel = entry.client.getClient().getChannel();
-      return channel.getConnectivityState(false) === grpc.connectivityState.READY ?
-          // allow existing requests to drain before closing channel
-          setTimeout(() => {
-              channel.close();
-          }, this.MAX_SHUTDOWN_WAIT)
-          :
-          channel.close();
-  };
-
 }

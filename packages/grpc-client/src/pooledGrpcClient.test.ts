@@ -1,0 +1,190 @@
+import { clients, hello, services } from "./helloWorld";
+import { Observable } from "rxjs";
+import { Context, IError, StatusCodes } from "@types-first-api/core";
+import { GrpcServer } from "@types-first-api/grpc-server";
+import { PooledGrpcClient, PooledGrpcClientOptions } from "./pooledGrpcClient";
+
+jest.setTimeout(15000);
+const address = {
+  host: "localhost",
+  port: 8940
+};
+
+const serviceName = "hello.peeps.GreeterService";
+
+const message = {
+  message: "hello"
+};
+
+const unaryHelloHandler = jest.fn(
+  async (
+    req$: Observable<hello.peeps.HelloRequest>,
+    ctx: Context,
+    {}
+  ): Promise<hello.peeps.HelloReply> => {
+    return message;
+  }
+);
+
+const unavailableHello = jest.fn(
+  async (
+    req$: Observable<hello.peeps.HelloRequest>,
+    ctx: Context,
+    {}
+  ): Promise<hello.peeps.HelloReply> => {
+    const error: IError = {
+      code: StatusCodes.Unavailable,
+      message: "call failed because service is unavailable",
+      forwardedFor: []
+    };
+
+    throw error;
+  }
+);
+
+let isAvailable = false;
+
+const conditionallyAvailableHello = jest.fn(
+  async (
+    req$: Observable<hello.peeps.HelloRequest>,
+    ctx: Context,
+    {}
+  ): Promise<hello.peeps.HelloReply> => {
+    if (isAvailable) {
+      isAvailable = false;
+      return message;
+    }
+
+    isAvailable = true;
+    const error: IError = {
+      code: StatusCodes.Unavailable,
+      message: "call failed because service is unavailable",
+      forwardedFor: []
+    };
+
+    throw error;
+  }
+);
+
+const service = services.create(serviceName, {});
+
+service.registerServiceHandler("UnaryHello", unaryHelloHandler);
+service.registerServiceHandler("ClientStreamHello", unavailableHello);
+service.registerServiceHandler("ServerStreamHello", conditionallyAvailableHello);
+
+it("maintains a healthy client pool after max client lifetime expires", async () => {
+  const grpcPooledClientOptions: PooledGrpcClientOptions = {
+    connectionPoolSize: 8,
+    maxClientLifeMs: 1000
+  };
+  unaryHelloHandler.mockClear();
+  const server = GrpcServer.createWithOptions({}, service);
+  await server.bind(address);
+
+  const client = clients.create(
+    serviceName,
+    address,
+    PooledGrpcClient,
+    grpcPooledClientOptions
+  );
+
+  for (let i = 0; i < grpcPooledClientOptions.connectionPoolSize; ++i) {
+    const response = await client.rpc.UnaryHello({}).toPromise();
+
+    expect(response).toEqual({ message: "Hello" });
+  }
+  expect(unaryHelloHandler).toBeCalledTimes(
+    grpcPooledClientOptions.connectionPoolSize
+  );
+
+  await new Promise(resolve => {
+    setTimeout(resolve, grpcPooledClientOptions.maxClientLifeMs);
+  });
+
+  for (let i = 0; i < grpcPooledClientOptions.connectionPoolSize; ++i) {
+    const response = await client.rpc.UnaryHello({}).toPromise();
+
+    expect(response).toEqual({ message: "Hello" });
+  }
+  expect(unaryHelloHandler).toBeCalledTimes(
+    grpcPooledClientOptions.connectionPoolSize * 2
+  );
+
+  await server.shutdown();
+});
+
+it("re-establishes client pool after channels close", async () => {
+  unaryHelloHandler.mockClear();
+  const grpcPooledClientOptions: PooledGrpcClientOptions = {
+    connectionPoolSize: 8
+  };
+  const firstServer = GrpcServer.createWithOptions({}, service);
+  const secondServer = GrpcServer.createWithOptions({}, service);
+  await firstServer.bind(address);
+
+  const client = clients.create(
+    serviceName,
+    address,
+    PooledGrpcClient,
+    grpcPooledClientOptions
+  );
+
+  for (let i = 0; i < grpcPooledClientOptions.connectionPoolSize * 4; ++i) {
+    const response = await client.rpc.UnaryHello({}).toPromise();
+
+    expect(response).toEqual({ message: "Hello" });
+  }
+  expect(unaryHelloHandler).toBeCalledTimes(
+    grpcPooledClientOptions.connectionPoolSize * 4
+  );
+
+  await firstServer.shutdown();
+
+  await secondServer.bind(address);
+
+  for (let i = 0; i < grpcPooledClientOptions.connectionPoolSize * 4; ++i) {
+    const response = await client.rpc.UnaryHello({}).toPromise();
+
+    expect(response).toEqual({ message: "Hello" });
+  }
+  expect(unaryHelloHandler).toBeCalledTimes(
+    grpcPooledClientOptions.connectionPoolSize * 8
+  );
+
+  await secondServer.shutdown();
+});
+
+it("tries a call twice when given an unavailable response", async () => {
+  unavailableHello.mockClear();
+  const server = GrpcServer.createWithOptions({}, service);
+  await server.bind(address);
+
+  const client = clients.create(serviceName, address, PooledGrpcClient);
+
+  const call = client.rpc.ClientStreamHello({}).toPromise();
+
+  await expect(call).rejects.toMatchObject({
+    code: StatusCodes.Unavailable
+  });
+
+  expect(unavailableHello).toBeCalledTimes(2);
+
+  await server.shutdown();
+});
+
+it("retries and gets an appropriate response when given an unavailable error code", async () => {
+  conditionallyAvailableHello.mockClear();
+  isAvailable = false;
+  const server = GrpcServer.createWithOptions({}, service);
+  await server.bind(address);
+
+  const client = clients.create(serviceName, address, PooledGrpcClient);
+
+  const response = await client.rpc.ServerStreamHello({}).toPromise();
+
+  expect(response).toEqual(message);
+
+  expect(conditionallyAvailableHello).toBeCalledTimes(2);
+
+  await server.shutdown();
+});

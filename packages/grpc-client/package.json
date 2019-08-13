@@ -18,7 +18,8 @@
     "@types-first-api/core": "^0.0.16",
     "@types-first-api/grpc-common": "^0.0.16",
     "grpc": "^1.15.1",
-    "lodash": "^4.17.10"
+    "lodash": "^4.17.10",
+    "protobufjs": "^6.8.8"
   },
   "peerDependencies": {
     "rxjs": "^6.3.3"
@@ -26,7 +27,22 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types-first-api/grpc-server": "0.0.16",
     "@types/lodash": "^4.14.116"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
   },
   "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac"
 }

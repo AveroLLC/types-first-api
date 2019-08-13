@@ -6,7 +6,7 @@ import * as path from 'path';
 import generate from './generator';
 
 program
-  .usage('[options] <protofiles ...>')
+  .usage('[callOptions] <protofiles ...>')
   .option('-o, --output [outputDir]', 'output directory')
   .parse(process.argv);
 

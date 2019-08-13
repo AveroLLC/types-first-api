@@ -8,25 +8,37 @@ import {
   IError,
   Request,
   Response,
-} from '@types-first-api/core';
-import { normalizeGrpcError } from '@types-first-api/grpc-common';
-import * as grpc from 'grpc';
-import * as _ from 'lodash';
-import * as pbjs from 'protobufjs';
-import { EMPTY, Subject } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+  StatusCodes
+} from "@types-first-api/core";
+import { normalizeGrpcError } from "@types-first-api/grpc-common";
+import * as grpc from "grpc";
+import * as _ from "lodash";
+import * as pbjs from "protobufjs";
+import { EMPTY, Observable, Subject, throwError } from "rxjs";
+import { catchError, retryWhen, mergeMap, map } from "rxjs/operators";
 
-export class GrpcClient<TService extends GRPCService<TService>> extends Client<TService> {
-  private readonly _client: grpc.Client;
-  private readonly methods: Record<keyof TService, grpc.MethodDefinition<any, any>>;
+export class GrpcClient<TService extends GRPCService<TService>> extends Client<
+  TService
+> {
+  private _client: grpc.Client;
+  private readonly regenerateClient: () => void;
+  private readonly methods: Record<
+    keyof TService,
+    grpc.MethodDefinition<any, any>
+  >;
 
-  constructor(protoService: pbjs.Service, address: ClientAddress, options: Record<string, any> = {}) {
+  constructor(
+    protoService: pbjs.Service,
+    address: ClientAddress,
+    options: Record<string, any> = {}
+  ) {
     super(protoService, address, options);
-    const GrpcClient = grpc.loadObject(protoService, {
-      enumsAsStrings: false,
+    const GrpcClientConstructor = grpc.loadObject(protoService, {
+      enumsAsStrings: false
     }) as typeof grpc.Client;
 
-    const serviceDef = (GrpcClient as any).service as grpc.ServiceDefinition<any>;
+    const serviceDef = (GrpcClientConstructor as any)
+      .service as grpc.ServiceDefinition<any>;
     this.methods = _.reduce(
       serviceDef,
       (methods, method) => {
@@ -35,8 +47,15 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       },
       {}
     ) as Record<keyof TService, grpc.MethodDefinition<any, any>>;
-    const addressString = `${address.host}:${address.port}`;
-    this._client = new GrpcClient(addressString, grpc.credentials.createInsecure(), options);
+
+    this.regenerateClient = () => {
+      this._client = new GrpcClientConstructor(
+        `${address.host}:${address.port}`,
+        grpc.credentials.createInsecure(),
+        options
+      );
+    };
+    this.regenerateClient();
   }
 
   public getClient(): grpc.Client {
@@ -44,33 +63,32 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
   }
 
   _call<K extends keyof TService>(
+      methodName: K,
+      request$: Request<TService[K]["request"]>,
+      ctx: Context
+  ): Response<TService[K]["response"]> {
+    return this.callAndRetryOnUnavailable(methodName,request$, ctx, 0);
+  }
+
+  private callAndRetryOnUnavailable = <K extends keyof TService>(
     methodName: K,
-    request$: Request<TService[K]['request']>,
-    ctx: Context
-  ): Response<TService[K]['response']> {
-    const { path, requestSerialize, responseDeserialize } = this.methods[methodName];
+    request$: Request<TService[K]["request"]>,
+    ctx: Context,
+    retries:number
+  ): Response<TService[K]["response"]> => {
+    const { path, requestSerialize, responseDeserialize } = this.methods[
+      methodName
+    ];
     const response$ = new Subject();
 
-    const grpcMetadata = new grpc.Metadata();
-    _.forEach(ctx.metadata, (v, k) => {
-      grpcMetadata.set(k, v);
-    });
-
-    // @ts-ignore - typings on call options are wrong
-    const grpcOpts: grpc.CallOptions = {
-      propagate_flags: grpc.propagate.DEFAULTS,
-    };
-    if (ctx.deadline != null) {
-      grpcOpts.deadline = ctx.deadline;
-      grpcMetadata.add(HEADERS.DEADLINE, ctx.deadline.toISOString());
-    }
+    const { metadata, callOptions } = this.createGrpcOptionsAndMetadata(ctx);
 
     const call = this._client.makeBidiStreamRequest(
       path,
       requestSerialize,
       responseDeserialize,
-      grpcMetadata,
-      grpcOpts
+      metadata,
+      callOptions
     );
 
     const reqSubscription = request$.subscribe(
@@ -78,7 +96,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
         call.write(val);
       },
       err => {
-        call.emit('error', err);
+        call.emit("error", err);
       },
       () => {
         call.end();
@@ -95,13 +113,13 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       )
       .subscribe();
 
-    call.on('data', d => {
+    call.on("data", d => {
       response$.next(d);
     });
 
     // errors are dealt with in the status handler
-    call.on('error', _.noop);
-    call.on('status', (status: grpc.StatusObject) => {
+    call.on("error", _.noop);
+    call.on("status", (status: grpc.StatusObject) => {
       cancelSubscription.unsubscribe();
       if (status.code === grpc.status.OK) {
         return response$.complete();
@@ -120,5 +138,31 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
     });
 
     return response$.asObservable();
-  }
+  };
+
+  private createGrpcOptionsAndMetadata = (
+    ctx: Context
+  ): {
+    metadata: grpc.Metadata;
+    callOptions: grpc.CallOptions;
+  } => {
+    const metadata = new grpc.Metadata();
+    _.forEach(ctx.metadata, (v, k) => {
+      metadata.set(k, v);
+    });
+
+    // @ts-ignore - typings on call callOptions are wrong
+    const callOptions: grpc.CallOptions = {
+      propagate_flags: grpc.propagate.DEFAULTS
+    };
+    if (ctx.deadline != null) {
+      callOptions.deadline = ctx.deadline;
+      metadata.add(HEADERS.DEADLINE, ctx.deadline.toISOString());
+    }
+
+    return {
+      metadata,
+      callOptions
+    };
+  };
 }
