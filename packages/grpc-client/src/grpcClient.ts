@@ -7,26 +7,47 @@ import {
   HEADERS,
   IError,
   Request,
-  Response,
-} from '@types-first-api/core';
-import { normalizeGrpcError } from '@types-first-api/grpc-common';
-import * as grpc from 'grpc';
-import * as _ from 'lodash';
-import * as pbjs from 'protobufjs';
-import { EMPTY, Subject } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+  Response
+} from "@types-first-api/core";
+import { normalizeGrpcError } from "@types-first-api/grpc-common";
+import * as grpc from "grpc";
+import * as _ from "lodash";
+import * as pbjs from "protobufjs";
+import { EMPTY, Subject } from "rxjs";
+import { catchError } from "rxjs/operators";
 
-export class GrpcClient<TService extends GRPCService<TService>> extends Client<TService> {
+export interface GrpcClientOptions {
+  client?: Record<string, string | number>;
+  grpc?: {
+    serializeErrors?: boolean;
+    enumsAsStrings?: boolean;
+  };
+}
+
+export class GrpcClient<TService extends GRPCService<TService>> extends Client<
+  TService
+> {
   private readonly _client: grpc.Client;
-  private readonly methods: Record<keyof TService, grpc.MethodDefinition<any, any>>;
+  private readonly methods: Record<
+    keyof TService,
+    grpc.MethodDefinition<any, any>
+  >;
+  private readonly grpcOptions: Required<GrpcClientOptions>["grpc"];
 
-  constructor(protoService: pbjs.Service, address: ClientAddress, options: Record<string, any> = {}) {
-    super(protoService, address, options);
+  constructor(
+    protoService: pbjs.Service,
+    address: ClientAddress,
+    options: GrpcClientOptions = {}
+  ) {
+    super(protoService, address, options.client || {});
+    this.grpcOptions = options.grpc || {};
     const GrpcClient = grpc.loadObject(protoService, {
-      enumsAsStrings: false,
+      enumsAsStrings: this.grpcOptions.enumsAsStrings || false
     }) as typeof grpc.Client;
 
-    const serviceDef = (GrpcClient as any).service as grpc.ServiceDefinition<any>;
+    const serviceDef = (GrpcClient as any).service as grpc.ServiceDefinition<
+      any
+    >;
     this.methods = _.reduce(
       serviceDef,
       (methods, method) => {
@@ -36,7 +57,12 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       {}
     ) as Record<keyof TService, grpc.MethodDefinition<any, any>>;
     const addressString = `${address.host}:${address.port}`;
-    this._client = new GrpcClient(addressString, grpc.credentials.createInsecure(), options);
+    this._client = new GrpcClient(
+      addressString,
+      grpc.credentials.createInsecure(),
+      options.client
+    );
+
   }
 
   public getClient(): grpc.Client {
@@ -45,10 +71,12 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
 
   _call<K extends keyof TService>(
     methodName: K,
-    request$: Request<TService[K]['request']>,
+    request$: Request<TService[K]["request"]>,
     ctx: Context
-  ): Response<TService[K]['response']> {
-    const { path, requestSerialize, responseDeserialize } = this.methods[methodName];
+  ): Response<TService[K]["response"]> {
+    const { path, requestSerialize, responseDeserialize } = this.methods[
+      methodName
+    ];
     const response$ = new Subject();
 
     const grpcMetadata = new grpc.Metadata();
@@ -58,7 +86,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
 
     // @ts-ignore - typings on call options are wrong
     const grpcOpts: grpc.CallOptions = {
-      propagate_flags: grpc.propagate.DEFAULTS,
+      propagate_flags: grpc.propagate.DEFAULTS
     };
     if (ctx.deadline != null) {
       grpcOpts.deadline = ctx.deadline;
@@ -78,7 +106,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
         call.write(val);
       },
       err => {
-        call.emit('error', err);
+        call.emit("error", err);
       },
       () => {
         call.end();
@@ -95,13 +123,13 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       )
       .subscribe();
 
-    call.on('data', d => {
+    call.on("data", d => {
       response$.next(d);
     });
 
     // errors are dealt with in the status handler
-    call.on('error', _.noop);
-    call.on('status', (status: grpc.StatusObject) => {
+    call.on("error", _.noop);
+    call.on("status", (status: grpc.StatusObject) => {
       cancelSubscription.unsubscribe();
       if (status.code === grpc.status.OK) {
         return response$.complete();
@@ -111,12 +139,16 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<T
       if (serializedError != null && serializedError.length > 0) {
         try {
           err = JSON.parse(serializedError[0].toString());
-        } catch (e) {}
+        } catch (e) {
+          err = normalizeGrpcError(status, { ...DEFAULT_CLIENT_ERROR });
+        }
       } else {
         // TODO: what is the source for client errors?
         err = normalizeGrpcError(status, { ...DEFAULT_CLIENT_ERROR });
       }
-      response$.error(err);
+      response$.error(
+        this.grpcOptions.serializeErrors ? JSON.stringify(err) : err
+      );
     });
 
     return response$.asObservable();

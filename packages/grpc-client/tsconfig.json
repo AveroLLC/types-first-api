@@ -5,7 +5,8 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": false,
     "declaration": true,
-    "outDir": "dest"
+    "outDir": "dest",
+    "strictNullChecks": true
   },
   "files": ["src/index.ts"],
   "exclude": ["node_modules"]
