@@ -26,7 +26,24 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/lodash": "^4.14.116"
+    "@types-first-api/grpc-server": "0.0.16",
+    "@types/lodash": "^4.14.116",
+    "protobufjs": "^6.8.8"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "testEnvironment": "node",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
   },
   "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac"
 }
