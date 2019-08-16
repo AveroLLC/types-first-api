@@ -11,7 +11,6 @@ import * as pbjs from "protobufjs";
 import { Observable } from "rxjs";
 import { GrpcClient, GrpcClientOptions } from "./grpcClient";
 import { catchError } from "rxjs/operators";
-import * as grpc from "grpc";
 
 interface PoolEntry<TService extends GRPCService<TService>> {
   initTime: number;

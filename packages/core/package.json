@@ -25,8 +25,7 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.116",
-    "jest": "^23.6.0",
-    "rxjs": "^6.3.3"
+    "jest": "^23.6.0"
   },
   "jest": {
     "transform": {

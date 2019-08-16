@@ -103,7 +103,7 @@ describe('Service', () => {
       });
 
       it('should provide registered dependencies to the handler', () => {
-        const handler = jest.fn((req, ctx) => {
+        const handler = jest.fn((req, ctx, deps) => {
           return of({ val: 12 });
         });
 
@@ -114,6 +114,7 @@ describe('Service', () => {
         return response.toPromise().then(() => {
           expect(handler).toHaveBeenCalledTimes(1);
           const args = handler.mock.calls[0];
+          console.log(handler.mock.calls[0]);
           expect(args[2]).toEqual({ usersSvc });
         });
       });
@@ -147,7 +148,7 @@ describe('Service', () => {
       });
 
       it('should handle handlers that return Promises', () => {
-        const handler = jest.fn(async (req, ctx) => {
+        const handler = jest.fn(async (req, ctx, deps) => {
           return { val: 12 };
         });
 

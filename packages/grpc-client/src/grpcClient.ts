@@ -7,19 +7,21 @@ import {
   HEADERS,
   IError,
   Request,
-  Response
+  Response,
+  ClientOptions
 } from "@types-first-api/core";
 import { normalizeGrpcError } from "@types-first-api/grpc-common";
 import * as grpc from "grpc";
 import * as _ from "lodash";
 import * as pbjs from "protobufjs";
 import { EMPTY, Subject } from "rxjs";
-import { catchError } from "rxjs/operators";
+import {catchError} from "rxjs/operators";
+
 
 export interface GrpcClientOptions {
-  client?: Record<string, string | number>;
-  grpc?: {
-    serializeErrors?: boolean;
+  grpcClient?: Record<string, string | number>;
+  client?: ClientOptions;
+  protos?: {
     enumsAsStrings?: boolean;
   };
 }
@@ -32,7 +34,6 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<
     keyof TService,
     grpc.MethodDefinition<any, any>
   >;
-  private readonly grpcOptions: Required<GrpcClientOptions>["grpc"];
 
   constructor(
     protoService: pbjs.Service,
@@ -40,9 +41,9 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<
     options: GrpcClientOptions = {}
   ) {
     super(protoService, address, options.client || {});
-    this.grpcOptions = options.grpc || {};
+
     const GrpcClient = grpc.loadObject(protoService, {
-      enumsAsStrings: this.grpcOptions.enumsAsStrings || false
+      enumsAsStrings: (options.protos && options.protos.enumsAsStrings) || false
     }) as typeof grpc.Client;
 
     const serviceDef = (GrpcClient as any).service as grpc.ServiceDefinition<
@@ -60,9 +61,8 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<
     this._client = new GrpcClient(
       addressString,
       grpc.credentials.createInsecure(),
-      options.client
+      options.grpcClient
     );
-
   }
 
   public getClient(): grpc.Client {
@@ -146,9 +146,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<
         // TODO: what is the source for client errors?
         err = normalizeGrpcError(status, { ...DEFAULT_CLIENT_ERROR });
       }
-      response$.error(
-        this.grpcOptions.serializeErrors ? JSON.stringify(err) : err
-      );
+      response$.error(err);
     });
 
     return response$.asObservable();

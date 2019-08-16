@@ -32,7 +32,7 @@ const service = services.create(serviceName, {});
 
 service.registerServiceHandler("ClientStreamHello", unavailableHello);
 
-it("tries a call twice when given an unavailable response", async () => {
+it("tries a call once when given an unavailable response", async () => {
     unavailableHello.mockClear();
     const server = GrpcServer.createWithOptions({}, service);
     await server.bind(address);
@@ -45,7 +45,7 @@ it("tries a call twice when given an unavailable response", async () => {
         code: StatusCodes.Unavailable
     });
 
-    expect(unavailableHello).toBeCalledTimes(2);
+    expect(unavailableHello).toBeCalledTimes(1);
 
     await server.shutdown();
 });
