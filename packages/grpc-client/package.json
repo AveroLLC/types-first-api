@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/grpc-client",
-  "version": "0.0.17",
+  "version": "0.1.0",
   "description": "Types-First API HTTP client",
   "publishConfig": {
     "access": "public"
@@ -15,8 +15,8 @@
     "prepare": "tsc"
   },
   "dependencies": {
-    "@types-first-api/core": "^0.0.17",
-    "@types-first-api/grpc-common": "^0.0.17",
+    "@types-first-api/core": "^0.1.0",
+    "@types-first-api/grpc-common": "^0.1.0",
     "grpc": "^1.15.1",
     "lodash": "^4.17.10"
   },
@@ -26,7 +26,7 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types-first-api/grpc-server": "^0.0.17",
+    "@types-first-api/grpc-server": "^0.1.0",
     "@types/lodash": "^4.14.116",
     "protobufjs": "^6.8.8"
   },
