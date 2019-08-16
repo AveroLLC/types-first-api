@@ -2,14 +2,13 @@ import { clients, hello, services } from "./testService";
 import { Observable } from "rxjs";
 import { Context, IError, StatusCodes } from "@types-first-api/core";
 import { GrpcServer } from "@types-first-api/grpc-server";
-import { PooledGrpcClient } from "./pooledGrpcClient";
+import { PooledGrpcClient, PooledGrpcClientOptions } from "./pooledGrpcClient";
 
 jest.setTimeout(15000);
 const address = {
   host: "localhost",
-  port: 8940
+  port: 8941
 };
-
 
 const serviceName = "hello.peeps.GreeterService";
 
@@ -199,6 +198,38 @@ it("retries and gets an appropriate response when given an unavailable error cod
   expect(response).toEqual(message);
 
   expect(conditionallyAvailableHello).toBeCalledTimes(2);
+
+  await server.shutdown();
+});
+
+it("optionally returns serialized errors", async () => {
+  unavailableHello.mockClear();
+
+  const server = GrpcServer.createWithOptions({}, service);
+  await server.bind(address);
+
+  const options: PooledGrpcClientOptions = {
+    client: {
+      serializeErrors: true
+    }
+  };
+
+  const client = clients.create(
+    serviceName,
+    address,
+    PooledGrpcClient,
+    options
+  );
+
+  const error = await client.rpc
+    .ClientStreamHello({})
+    .toPromise()
+    .catch(err => err);
+
+  expect(typeof error).toEqual('string');
+  expect(JSON.parse(error)).toMatchObject({
+    code: StatusCodes.Unavailable
+  });
 
   await server.shutdown();
 });

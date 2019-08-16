@@ -1,9 +1,9 @@
-import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { Client } from './client';
-import { Context } from './context';
-import { StatusCodes } from './errors';
-import { Endpoint } from './interfaces';
+import { Observable, of } from "rxjs";
+import { map } from "rxjs/operators";
+import { Client } from "./client";
+import { Context } from "./context";
+import { StatusCodes } from "./errors";
+import { Endpoint } from "./interfaces";
 
 interface IncrementRequest {
   val: number;
@@ -26,14 +26,14 @@ interface TestService {
   concat: Endpoint<ConcatRequest, ConcatResponse>;
 }
 
-describe('client', () => {
+describe("client", () => {
   const callHandler = jest.fn();
   class MyClient extends Client<TestService> {
-    _call<K extends 'increment' | 'concat'>(
+    _call<K extends "increment" | "concat">(
       methodName: K,
-      req: Observable<TestService[K]['request']>,
+      req: Observable<TestService[K]["request"]>,
       ctx: Context
-    ): Observable<TestService[K]['response']> {
+    ): Observable<TestService[K]["response"]> {
       return callHandler(methodName, req, ctx);
     }
   }
@@ -45,7 +45,7 @@ describe('client', () => {
     callHandler.mockImplementation((methodName, req, ctx) => {
       return req.pipe(
         map((r: any) => ({
-          val: r.val + r.add,
+          val: r.val + r.add
         }))
       );
     });
@@ -54,11 +54,11 @@ describe('client', () => {
       {
         methods: {
           increment: {},
-          concat: {},
+          concat: {}
         },
-        fullName: '',
+        fullName: ""
       } as any,
-      { host: '', port: 1 }
+      { host: "", port: 1 }
     );
     context = Context.create();
 
@@ -69,26 +69,26 @@ describe('client', () => {
     client.addMiddleware(middleware);
   });
 
-  describe('calls', () => {
-    it('should provide an rpc method for each service function', () => {
+  describe("calls", () => {
+    it("should provide an rpc method for each service function", () => {
       expect(client.rpc.concat).toBeInstanceOf(Function);
       expect(client.rpc.increment).toBeInstanceOf(Function);
     });
 
-    it('should return an observable of the response', () => {
+    it("should return an observable of the response", () => {
       const req$ = of({
-        val: '1',
-        add: '2',
+        val: "1",
+        add: "2"
       });
       const res$ = client.rpc.concat(req$, context);
 
       expect(res$).toBeInstanceOf(Observable);
     });
 
-    it('lazily evaluate middleware & handler', async () => {
+    it("lazily evaluate middleware & handler", async () => {
       const req$ = of({
-        val: '1',
-        add: '2',
+        val: "1",
+        add: "2"
       });
 
       const res$ = client.rpc.concat(req$, context);
@@ -103,57 +103,56 @@ describe('client', () => {
       expect(callHandler).toHaveBeenCalledTimes(2);
     });
 
-    it('should invoke the handler when an rpc method is called', async () => {
+    it("should invoke the handler when an rpc method is called", async () => {
       const req$ = of({
-        val: '1',
-        add: '2',
+        val: "1",
+        add: "2"
       });
       const res$ = client.rpc.concat(req$, context);
 
       await res$.toPromise();
       expect(callHandler).toHaveBeenCalledTimes(1);
-      expect(callHandler).toHaveBeenCalledWith('concat', req$, context);
+      expect(callHandler).toHaveBeenCalledWith("concat", req$, context);
     });
 
-    it('should invoke the handler when an rpc method is called with just TReq interface', async () => {
-       callHandler.mockImplementationOnce((method, $req) => {
-         return $req
-       });
+    it("should invoke the handler when an rpc method is called with just TReq interface", async () => {
+      callHandler.mockImplementationOnce((method, $req) => {
+        return $req;
+      });
       const req = {
-        val: '1',
-        add: '2',
+        val: "1",
+        add: "2"
       };
       const res$ = client.rpc.concat(req, context);
 
       const result = await res$.toPromise();
       expect(callHandler).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(req)
+      expect(result).toEqual(req);
     });
 
-
-    it('should catch errors thrown in the handler', () => {
+    it("should catch errors thrown in the handler", () => {
       callHandler.mockImplementation(() => {
-        throw new Error('UH OH!');
+        throw new Error("UH OH!");
       });
 
       const req$ = of({
-        val: '1',
-        add: '2',
+        val: "1",
+        add: "2"
       });
       const res$ = client.rpc.concat(req$, context);
 
       return expect(res$.toPromise()).rejects.toMatchObject({
         code: StatusCodes.ClientError,
-        message: 'UH OH!',
+        message: "UH OH!"
       });
     });
   });
 
-  describe('middleware', () => {
-    it('should invoke the middleware with the req, context, and method name', async () => {
+  describe("middleware", () => {
+    it("should invoke the middleware with the req, context, and method name", async () => {
       const req$ = of({
-        val: '1',
-        add: '2',
+        val: "1",
+        add: "2"
       });
 
       const res$ = client.rpc.concat(req$, context);
@@ -163,10 +162,10 @@ describe('client', () => {
       const [req, ctx, _, methodName] = middleware.mock.calls[0];
       expect(req).toBe(req$);
       expect(ctx).toBe(context);
-      expect(methodName).toBe('concat');
+      expect(methodName).toBe("concat");
     });
 
-    it('should invoke middleware before the handler', async () => {
+    it("should invoke middleware before the handler", async () => {
       const callOrder = [];
       middleware.mockImplementation((req$, ctx, next) => {
         callOrder.push(1);
@@ -179,8 +178,8 @@ describe('client', () => {
 
       const res$ = client.rpc.concat(
         of({
-          val: '1',
-          add: '2',
+          val: "1",
+          add: "2"
         }),
         context
       );
@@ -190,7 +189,7 @@ describe('client', () => {
       expect(callOrder).toEqual([1, 2]);
     });
 
-    it('should invoke middleware in the order they are registered', async () => {
+    it("should invoke middleware in the order they are registered", async () => {
       const callOrder = [];
       middleware.mockImplementation((req$, ctx, next) => {
         callOrder.push(1);
@@ -207,8 +206,8 @@ describe('client', () => {
 
       const res$ = client.rpc.concat(
         of({
-          val: '1',
-          add: '2',
+          val: "1",
+          add: "2"
         }),
         context
       );
@@ -217,34 +216,34 @@ describe('client', () => {
       expect(callOrder).toEqual([1, 2, 3]);
     });
 
-    it('should catch errors thrown in middleware', () => {
+    it("should catch errors thrown in middleware", () => {
       middleware.mockImplementation(() => {
-        throw new Error('UH OH!');
+        throw new Error("UH OH!");
       });
 
       const res$ = client.rpc.concat(
         of({
-          val: '1',
-          add: '2',
+          val: "1",
+          add: "2"
         }),
         context
       );
 
       return expect(res$.toPromise()).rejects.toMatchObject({
         code: StatusCodes.ClientError,
-        message: 'UH OH!',
+        message: "UH OH!"
       });
     });
 
-    it('should not invoke subsequent stack calls after an error', async () => {
+    it("should not invoke subsequent stack calls after an error", async () => {
       middleware.mockImplementation(() => {
-        throw new Error('UH OH!');
+        throw new Error("UH OH!");
       });
 
       const res$ = client.rpc.concat(
         of({
-          val: '1',
-          add: '2',
+          val: "1",
+          add: "2"
         }),
         context
       );
@@ -254,36 +253,74 @@ describe('client', () => {
     });
   });
 
-  describe('cancellation', () => {
+  describe("cancellation", () => {
     // TODO: this is not implemented
-    it('should skip the handler if the context is cancelled', async () => {
+    it("should skip the handler if the context is cancelled", async () => {
       const req$ = of({
-        val: '1',
-        add: '2',
+        val: "1",
+        add: "2"
       });
       context.cancel();
       const res$ = client.rpc.concat(req$, context);
 
       await expect(res$.toPromise()).rejects.toMatchObject({
-        code: StatusCodes.Cancelled,
+        code: StatusCodes.Cancelled
       });
 
       expect(middleware).toHaveBeenCalledTimes(0);
       expect(callHandler).toHaveBeenCalledTimes(0);
     });
 
-    it('should skip middleware if context is cancelled', async () => {
+    it("should skip middleware if context is cancelled", async () => {
       const req$ = of({
-        val: '1',
-        add: '2',
+        val: "1",
+        add: "2"
       });
       context.cancel();
       const res$ = client.rpc.concat(req$, context);
       await expect(res$.toPromise()).rejects.toMatchObject({
-        code: StatusCodes.Cancelled,
+        code: StatusCodes.Cancelled
       });
 
       expect(middleware).toHaveBeenCalledTimes(0);
+    });
+  });
+
+  describe("errors", () => {
+    it("can be configured to throw serialized errors", async () => {
+      const serializedErrorClient = new MyClient(
+        {
+          methods: {
+            increment: {},
+            concat: {}
+          },
+          fullName: ""
+        } as any,
+        { host: "", port: 1 },
+        {
+          serializeErrors: true
+        }
+      );
+
+      callHandler.mockImplementation(() => {
+        throw new Error("UH OH!");
+      });
+
+      const req$ = of({
+        val: "1",
+        add: "2"
+      });
+      const errorResponse = await serializedErrorClient.rpc
+        .concat(req$, context)
+        .toPromise()
+        .catch(err => {
+          return err;
+        });
+
+      return expect(JSON.parse(errorResponse)).toMatchObject({
+        code: StatusCodes.ClientError,
+        message: "UH OH!"
+      });
     });
   });
 });
