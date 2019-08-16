@@ -15,6 +15,7 @@ import * as _ from "lodash";
 import * as pbjs from "protobufjs";
 import { EMPTY, Subject } from "rxjs";
 import { catchError } from "rxjs/operators";
+import {loadPackageDefinition} from "grpc";
 
 export interface GrpcClientOptions {
   client?: Record<string, string | number>;
@@ -41,9 +42,7 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<
   ) {
     super(protoService, address, options.client || {});
     this.grpcOptions = options.grpc || {};
-    const GrpcClient = grpc.loadObject(protoService, {
-      enumsAsStrings: this.grpcOptions.enumsAsStrings || false
-    }) as typeof grpc.Client;
+    const GrpcClient = loadPackageDefinition(protoService)
 
     const serviceDef = (GrpcClient as any).service as grpc.ServiceDefinition<
       any

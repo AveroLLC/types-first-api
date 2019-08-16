@@ -18,6 +18,7 @@
     "tfapi": "dest/index.js"
   },
   "dependencies": {
+    "@grpc/proto-loader": "^0.5.1",
     "@types-first-api/core": "^0.0.16",
     "commander": "^2.19.0",
     "lodash": "^4.17.10",

@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
 import * as ts from 'typescript';
+import {loadSync, PackageDefinition} from "@grpc/proto-loader";
 
 /*
 So you're digging around in here and want to make some changes, huh?
@@ -14,15 +15,13 @@ Good luck!
 */
 
 export default function generate(protoPath: string): string {
-  const root = pbjs.loadSync(protoPath);
-  root.resolveAll();
+  const root : PackageDefinition = loadSync(protoPath);
   const interfaces = parseNode(root);
   const clientServer = initializeClientAndServer(root);
-  const generatedTs = buildSourceFile([...interfaces, ...clientServer]);
-  return generatedTs;
+  return buildSourceFile([...interfaces, ...clientServer]);
 }
 
-function initializeClientAndServer(root: pbjs.Root): ts.Statement[] {
+function initializeClientAndServer(root: PackageDefinition): ts.Statement[] {
   const serviceNames = createServiceList(root);
   const serviceDefinitionsIdentifier = ts.createIdentifier('Services');
   const jsonDescriptorIdentifier = ts.createIdentifier('jsonDescriptor');
