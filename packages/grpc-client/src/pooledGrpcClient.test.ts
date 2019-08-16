@@ -1,8 +1,8 @@
-import { clients, hello, services } from "./helloWorld";
+import { clients, hello, services } from "./testService";
 import { Observable } from "rxjs";
 import { Context, IError, StatusCodes } from "@types-first-api/core";
 import { GrpcServer } from "@types-first-api/grpc-server";
-import { PooledGrpcClient, PooledGrpcClientOptions } from "./pooledGrpcClient";
+import { PooledGrpcClient } from "./pooledGrpcClient";
 
 jest.setTimeout(15000);
 const address = {
@@ -10,10 +10,11 @@ const address = {
   port: 8940
 };
 
+
 const serviceName = "hello.peeps.GreeterService";
 
 const message = {
-  message: "hello"
+  message: "Hello"
 };
 
 const unaryHelloHandler = jest.fn(
@@ -70,12 +71,17 @@ const service = services.create(serviceName, {});
 
 service.registerServiceHandler("UnaryHello", unaryHelloHandler);
 service.registerServiceHandler("ClientStreamHello", unavailableHello);
-service.registerServiceHandler("ServerStreamHello", conditionallyAvailableHello);
+service.registerServiceHandler(
+  "ServerStreamHello",
+  conditionallyAvailableHello
+);
 
 it("maintains a healthy client pool after max client lifetime expires", async () => {
-  const grpcPooledClientOptions: PooledGrpcClientOptions = {
-    connectionPoolSize: 8,
-    maxClientLifeMs: 1000
+  const grpcPooledClientOptions = {
+    pool: {
+      connectionPoolSize: 8,
+      maxClientLifeMs: 1000
+    }
   };
   unaryHelloHandler.mockClear();
   const server = GrpcServer.createWithOptions({}, service);
@@ -88,26 +94,26 @@ it("maintains a healthy client pool after max client lifetime expires", async ()
     grpcPooledClientOptions
   );
 
-  for (let i = 0; i < grpcPooledClientOptions.connectionPoolSize; ++i) {
+  for (let i = 0; i < grpcPooledClientOptions.pool.connectionPoolSize; ++i) {
     const response = await client.rpc.UnaryHello({}).toPromise();
 
-    expect(response).toEqual({ message: "Hello" });
+    expect(response).toEqual(message);
   }
   expect(unaryHelloHandler).toBeCalledTimes(
-    grpcPooledClientOptions.connectionPoolSize
+    grpcPooledClientOptions.pool.connectionPoolSize
   );
 
   await new Promise(resolve => {
-    setTimeout(resolve, grpcPooledClientOptions.maxClientLifeMs);
+    setTimeout(resolve, grpcPooledClientOptions.pool.maxClientLifeMs);
   });
 
-  for (let i = 0; i < grpcPooledClientOptions.connectionPoolSize; ++i) {
+  for (let i = 0; i < grpcPooledClientOptions.pool.connectionPoolSize; ++i) {
     const response = await client.rpc.UnaryHello({}).toPromise();
 
-    expect(response).toEqual({ message: "Hello" });
+    expect(response).toEqual(message);
   }
   expect(unaryHelloHandler).toBeCalledTimes(
-    grpcPooledClientOptions.connectionPoolSize * 2
+    grpcPooledClientOptions.pool.connectionPoolSize * 2
   );
 
   await server.shutdown();
@@ -115,8 +121,8 @@ it("maintains a healthy client pool after max client lifetime expires", async ()
 
 it("re-establishes client pool after channels close", async () => {
   unaryHelloHandler.mockClear();
-  const grpcPooledClientOptions: PooledGrpcClientOptions = {
-    connectionPoolSize: 8
+  const grpcPooledClientOptions = {
+    pool: { connectionPoolSize: 8 }
   };
   const firstServer = GrpcServer.createWithOptions({}, service);
   const secondServer = GrpcServer.createWithOptions({}, service);
@@ -129,26 +135,34 @@ it("re-establishes client pool after channels close", async () => {
     grpcPooledClientOptions
   );
 
-  for (let i = 0; i < grpcPooledClientOptions.connectionPoolSize * 4; ++i) {
+  for (
+    let i = 0;
+    i < grpcPooledClientOptions.pool.connectionPoolSize * 4;
+    ++i
+  ) {
     const response = await client.rpc.UnaryHello({}).toPromise();
 
-    expect(response).toEqual({ message: "Hello" });
+    expect(response).toEqual(message);
   }
   expect(unaryHelloHandler).toBeCalledTimes(
-    grpcPooledClientOptions.connectionPoolSize * 4
+    grpcPooledClientOptions.pool.connectionPoolSize * 4
   );
 
   await firstServer.shutdown();
 
   await secondServer.bind(address);
 
-  for (let i = 0; i < grpcPooledClientOptions.connectionPoolSize * 4; ++i) {
+  for (
+    let i = 0;
+    i < grpcPooledClientOptions.pool.connectionPoolSize * 4;
+    ++i
+  ) {
     const response = await client.rpc.UnaryHello({}).toPromise();
 
-    expect(response).toEqual({ message: "Hello" });
+    expect(response).toEqual(message);
   }
   expect(unaryHelloHandler).toBeCalledTimes(
-    grpcPooledClientOptions.connectionPoolSize * 8
+    grpcPooledClientOptions.pool.connectionPoolSize * 8
   );
 
   await secondServer.shutdown();

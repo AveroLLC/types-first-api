@@ -1,5 +1,5 @@
 import {
-  Client as BaseClient,
+  Client,
   ClientAddress,
   Context,
   DEFAULT_CLIENT_ERROR,
@@ -7,70 +7,65 @@ import {
   HEADERS,
   IError,
   Request,
-  Response,
-  StatusCodes
+  Response
 } from "@types-first-api/core";
 import { normalizeGrpcError } from "@types-first-api/grpc-common";
-import {
-  CallOptions,
-  Client,
-  credentials,
-  loadObject,
-  makeClientConstructor,
-  Metadata,
-  StatusObject
-} from "@grpc/grpc-js";
-import {
-  loadSync,
-  MethodDefinition,
-  ServiceDefinition
-} from "@grpc/proto-loader";
+import * as grpc from "grpc";
 import * as _ from "lodash";
+import * as pbjs from "protobufjs";
 import { EMPTY, Subject } from "rxjs";
 import { catchError } from "rxjs/operators";
-import {ChannelOptions} from "@grpc/grpc-js/build/src/channel-options";
-import {propagate} from "grpc";
-import {Status} from "@grpc/grpc-js/build/src/constants";
 
-type GenericServiceDefinition<TService extends GRPCService<TService>> = {
-  [K in keyof TService]: MethodDefinition<
-    TService[keyof TService]["request"],
-    TService[keyof TService]["request"]
+export interface GrpcClientOptions {
+  client?: Record<string, string | number>;
+  grpc?: {
+    serializeErrors?: boolean;
+    enumsAsStrings?: boolean;
+  };
+}
+
+export class GrpcClient<TService extends GRPCService<TService>> extends Client<
+  TService
+> {
+  private readonly _client: grpc.Client;
+  private readonly methods: Record<
+    keyof TService,
+    grpc.MethodDefinition<any, any>
   >;
-};
-
-export class GrpcClient<
-  TService extends GRPCService<TService>
-> extends BaseClient<TService> {
-  private _client: Client;
-  private readonly regenerateClient: () => void;
-  private readonly methods: GenericServiceDefinition<TService>;
+  private readonly grpcOptions: Required<GrpcClientOptions>["grpc"];
 
   constructor(
-    protoService: GenericServiceDefinition<TService>,
-    serviceName: string,
+    protoService: pbjs.Service,
     address: ClientAddress,
-    options: Partial<ChannelOptions>
+    options: GrpcClientOptions = {}
   ) {
-    super(protoService, address, options);
-    const serviceClientConstructor = makeClientConstructor(
-      protoService,
-      serviceName
+    super(protoService, address, options.client || {});
+    this.grpcOptions = options.grpc || {};
+    const GrpcClient = grpc.loadObject(protoService, {
+      enumsAsStrings: this.grpcOptions.enumsAsStrings || false
+    }) as typeof grpc.Client;
+
+    const serviceDef = (GrpcClient as any).service as grpc.ServiceDefinition<
+      any
+    >;
+    this.methods = _.reduce(
+      serviceDef,
+      (methods, method) => {
+        methods[(method as any).originalName] = method;
+        return methods;
+      },
+      {}
+    ) as Record<keyof TService, grpc.MethodDefinition<any, any>>;
+    const addressString = `${address.host}:${address.port}`;
+    this._client = new GrpcClient(
+      addressString,
+      grpc.credentials.createInsecure(),
+      options.client
     );
 
-    this.methods = protoService;
-
-    this.regenerateClient = () => {
-      this._client = new serviceClientConstructor(
-        `${address.host}:${address.port}`,
-        credentials.createInsecure(),
-        options
-      );
-    };
-    this.regenerateClient();
   }
 
-  public getClient(): Client {
+  public getClient(): grpc.Client {
     return this._client;
   }
 
@@ -79,28 +74,31 @@ export class GrpcClient<
     request$: Request<TService[K]["request"]>,
     ctx: Context
   ): Response<TService[K]["response"]> {
-    return this.callAndRetryOnUnavailable(methodName, request$, ctx, 0);
-  }
-
-  private callAndRetryOnUnavailable = <K extends keyof TService>(
-    methodName: K,
-    request$: Request<TService[K]["request"]>,
-    ctx: Context,
-    retries: number
-  ): Response<TService[K]["response"]> => {
     const { path, requestSerialize, responseDeserialize } = this.methods[
       methodName
     ];
     const response$ = new Subject();
 
-    const { metadata, callOptions } = this.createGrpcOptionsAndMetadata(ctx);
+    const grpcMetadata = new grpc.Metadata();
+    _.forEach(ctx.metadata, (v, k) => {
+      grpcMetadata.set(k, v);
+    });
+
+    // @ts-ignore - typings on call options are wrong
+    const grpcOpts: grpc.CallOptions = {
+      propagate_flags: grpc.propagate.DEFAULTS
+    };
+    if (ctx.deadline != null) {
+      grpcOpts.deadline = ctx.deadline;
+      grpcMetadata.add(HEADERS.DEADLINE, ctx.deadline.toISOString());
+    }
 
     const call = this._client.makeBidiStreamRequest(
       path,
       requestSerialize,
       responseDeserialize,
-      metadata,
-      callOptions
+      grpcMetadata,
+      grpcOpts
     );
 
     const reqSubscription = request$.subscribe(
@@ -131,9 +129,9 @@ export class GrpcClient<
 
     // errors are dealt with in the status handler
     call.on("error", _.noop);
-    call.on("status", (status: StatusObject) => {
+    call.on("status", (status: grpc.StatusObject) => {
       cancelSubscription.unsubscribe();
-      if (status.code === Status.OK) {
+      if (status.code === grpc.status.OK) {
         return response$.complete();
       }
       const serializedError = status.metadata.get(HEADERS.TRAILER_ERROR);
@@ -141,39 +139,18 @@ export class GrpcClient<
       if (serializedError != null && serializedError.length > 0) {
         try {
           err = JSON.parse(serializedError[0].toString());
-        } catch (e) {}
+        } catch (e) {
+          err = normalizeGrpcError(status, { ...DEFAULT_CLIENT_ERROR });
+        }
       } else {
         // TODO: what is the source for client errors?
         err = normalizeGrpcError(status, { ...DEFAULT_CLIENT_ERROR });
       }
-      response$.error(err);
+      response$.error(
+        this.grpcOptions.serializeErrors ? JSON.stringify(err) : err
+      );
     });
 
     return response$.asObservable();
-  };
-
-  private createGrpcOptionsAndMetadata = (
-    ctx: Context
-  ): {
-    metadata: Metadata;
-    callOptions: CallOptions;
-  } => {
-    const metadata = new Metadata();
-    _.forEach(ctx.metadata, (v, k) => {
-      metadata.set(k, v);
-    });
-
-    const callOptions: CallOptions = {
-      propagate_flags: propagate.DEFAULTS
-    };
-    if (ctx.deadline != null) {
-      callOptions.deadline = ctx.deadline;
-      metadata.add(HEADERS.DEADLINE, ctx.deadline.toISOString());
-    }
-
-    return {
-      metadata,
-      callOptions
-    };
-  };
+  }
 }

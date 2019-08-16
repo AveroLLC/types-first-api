@@ -9,15 +9,21 @@ import {
 import * as _ from "lodash";
 import * as pbjs from "protobufjs";
 import { Observable } from "rxjs";
-import { GrpcClient } from "./grpcClient";
+import { GrpcClient , GrpcClientOptions} from "./grpcClient";
 import { catchError } from "rxjs/operators";
-
 
 interface PoolEntry<TService extends GRPCService<TService>> {
   initTime: number;
   client: GrpcClient<TService>;
   index: number;
 }
+
+export type PooledGrpcClientOptions = GrpcClientOptions & {
+  pool?: {
+    maxClientLifeMs?: number;
+    connectionPoolSize?: number;
+  };
+};
 
 /*
   Creates a pool of GrpcClients that allow for connection expiration and rotation between a set of clients.
@@ -27,10 +33,6 @@ interface PoolEntry<TService extends GRPCService<TService>> {
 
  */
 
-export interface PooledGrpcClientOptions {
-  maxClientLifeMs?: number;
-  connectionPoolSize?: number;
-}
 
 export class PooledGrpcClient<
   TService extends GRPCService<TService>
@@ -43,15 +45,17 @@ export class PooledGrpcClient<
 
   private _nextPoolIndex = 0;
 
+  private readonly grpcOptions: PooledGrpcClientOptions;
+
   constructor(
     private protoService: pbjs.Service,
     private address: ClientAddress,
-    options: Record<string, any> & PooledGrpcClientOptions = {}
+    options: PooledGrpcClientOptions = {}
   ) {
-    super(protoService, address, options);
-    this.CONNECTION_POOL_SIZE = options.connectionPoolSize || 12;
-    this.MAX_CLIENT_LIFE_MS = options.maxClientLifeMs || 30e3;
-
+    super(protoService, address, options.client || {});
+    this.grpcOptions = options;
+    this.CONNECTION_POOL_SIZE = options.pool && options.pool.connectionPoolSize || 12;
+    this.MAX_CLIENT_LIFE_MS = options.pool && options.pool.maxClientLifeMs || 30e3;
     this._clientPool = _.range(this.CONNECTION_POOL_SIZE).map((_, index) =>
       this.createPoolEntry(index)
     );
@@ -106,7 +110,7 @@ export class PooledGrpcClient<
       client: new GrpcClient<TService>(
         this.protoService,
         this.address,
-        this.options
+        this.grpcOptions
       ),
       initTime: Date.now(),
       index

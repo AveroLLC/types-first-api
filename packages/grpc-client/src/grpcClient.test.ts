@@ -1,4 +1,4 @@
-import { clients, hello, services } from "./helloWorld";
+import { clients, hello, services } from "./testService";
 import { Observable } from "rxjs";
 import {Context, IError, StatusCodes} from "@types-first-api/core";
 import { GrpcServer } from "@types-first-api/grpc-server";
@@ -6,8 +6,8 @@ import { GrpcClient } from "./grpcClient";
 
 jest.setTimeout(15000);
 const address = {
-  host: "localhost",
-  port: 8940
+    host: "localhost",
+    port: 8940
 };
 
 const serviceName = "hello.peeps.GreeterService";
@@ -18,13 +18,13 @@ const unavailableHello = jest.fn(
         ctx: Context,
         {}
     ): Promise<hello.peeps.HelloReply> => {
-      const error: IError = {
-        code: StatusCodes.Unavailable,
-        message: "call failed because service is unavailable",
-        forwardedFor: []
-      };
+        const error: IError = {
+            code: StatusCodes.Unavailable,
+            message: "call failed because service is unavailable",
+            forwardedFor: []
+        };
 
-      throw error;
+        throw error;
     }
 );
 
@@ -33,19 +33,19 @@ const service = services.create(serviceName, {});
 service.registerServiceHandler("ClientStreamHello", unavailableHello);
 
 it("tries a call twice when given an unavailable response", async () => {
-  unavailableHello.mockClear();
-  const server = GrpcServer.createWithOptions({}, service);
-  await server.bind(address);
+    unavailableHello.mockClear();
+    const server = GrpcServer.createWithOptions({}, service);
+    await server.bind(address);
 
-  const client = clients.create(serviceName, address, GrpcClient);
+    const client = clients.create(serviceName, address, GrpcClient);
 
-  const call = client.rpc.ClientStreamHello({}).toPromise();
+    const call = client.rpc.ClientStreamHello({}).toPromise();
 
-  await expect(call).rejects.toMatchObject({
-    code: StatusCodes.Unavailable
-  });
+    await expect(call).rejects.toMatchObject({
+        code: StatusCodes.Unavailable
+    });
 
-  expect(unavailableHello).toBeCalledTimes(2);
+    expect(unavailableHello).toBeCalledTimes(2);
 
-  await server.shutdown();
+    await server.shutdown();
 });

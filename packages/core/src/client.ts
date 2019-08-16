@@ -1,11 +1,11 @@
 import * as _ from 'lodash';
-import * as pbjs from 'protobufjs';
 import { defer, isObservable, of, throwError } from 'rxjs'
 import { catchError } from 'rxjs/operators';
 import { Context } from './context';
 import { createError, DEFAULT_CLIENT_ERROR } from './errors';
 import { GRPCService, Request, Response } from './interfaces';
 import { shortCircuitRace } from './shortCircuitRace';
+import {MethodDefinition, ServiceDefinition} from "@grpc/proto-loader";
 
 export type RpcCall<TReq, TRes> = (req: Request<TReq> | TReq, ctx?: Context) => Response<TRes>;
 
@@ -26,7 +26,7 @@ export interface ClientMiddleware<TService extends GRPCService<TService>> {
 }
 
 export type ClientConstructor<TService extends GRPCService<TService>> = new (
-  protoService: pbjs.Service,
+  protoService: ServiceDefinition,
   address: ClientAddress,
   options?: Record<string, any>
 ) => Client<TService>;
@@ -39,15 +39,17 @@ export interface ClientAddress {
 export abstract class Client<TService extends GRPCService<TService>> {
   private _middleware: ClientMiddleware<TService>[] = [];
 
-  protected pbjsService: pbjs.Service;
+  protected serviceDefinition: ServiceDefinition;
   protected options:  Record<string, any> = {};
   rpc: RpcCallMap<TService>;
+  serviceName: string;
 
-  constructor(protoService: pbjs.Service, address: ClientAddress, options: Record<string, any> = {}) {
-    this.pbjsService = protoService;
+  constructor(serviceName: string, protoService: ServiceDefinition, address: ClientAddress, options: Record<string, any> = {}) {
+    this.serviceDefinition = protoService;
     this.options = options;
-    this.rpc = _.mapValues<Record<string, pbjs.Method>, RpcCall<any, any>>(
-      protoService.methods,
+    this.serviceName = serviceName;
+    this.rpc = _.mapValues<Record<string, MethodDefinition<any, any>>, RpcCall<any, any>>(
+      protoService,
       (m, methodName) => {
         return (req, ctx) => {
           if (ctx == null) {
@@ -70,7 +72,7 @@ export abstract class Client<TService extends GRPCService<TService>> {
   };
 
   getName = () => {
-    return this.pbjsService.fullName.slice(1);
+    return this.serviceName
   };
 
   private invokeCall = <K extends keyof TService>(

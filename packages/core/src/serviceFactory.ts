@@ -1,22 +1,25 @@
 import * as pbjs from 'protobufjs';
 import { GRPCServiceMap } from './interfaces';
 import { Service } from './service';
+import {PackageDefinition} from "@grpc/proto-loader";
+import {isServiceDefinition} from "./clientFactory";
 
 export function serviceFactory<TServices extends GRPCServiceMap<TServices>>(
-  root: pbjs.Root
+  packageDefinition: PackageDefinition
 ) {
-  root.resolveAll();
 
   function create<
     K extends Extract<keyof TServices, string>,
     TDependencies extends object
   >(serviceName: K, dependencies: TDependencies) {
-    const pbjsService = root.lookupService(serviceName);
-    if (pbjsService == null) {
-      throw new Error(`Unable to create instance of unknown service: ${serviceName}`);
+    const service = packageDefinition[serviceName];
+    if (!isServiceDefinition(service)) {
+      throw new Error(
+          `Unable to create instance of unknown service: ${serviceName}`
+      );
     }
 
-    return new Service<TServices[K], TDependencies>(pbjsService, dependencies);
+    return new Service<TServices[K], TDependencies>(serviceName, service, dependencies);
   }
 
   return { create };

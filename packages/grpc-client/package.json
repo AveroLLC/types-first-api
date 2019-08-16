@@ -30,7 +30,8 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types-first-api/grpc-server": "0.0.16",
-    "@types/lodash": "^4.14.116"
+    "@types/lodash": "^4.14.116",
+    "protobufjs": "^6.8.8"
   },
   "jest": {
     "transform": {
