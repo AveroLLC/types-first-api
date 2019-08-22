@@ -1,4 +1,4 @@
-import { clients, hello, services } from "./testService";
+import { clients, hello, services } from "../protos/testService";
 import { Observable } from "rxjs";
 import { Context, IError, StatusCodes } from "@types-first-api/core";
 import { GrpcServer } from "@types-first-api/grpc-server";

@@ -47,9 +47,9 @@ function initializeClientAndServer(
         ts.createPropertySignature(
           [],
           ts.createLiteral(serviceName),
-          null,
+          undefined,
           ts.createTypeReferenceNode(serviceName, []),
-          null
+          undefined
         )
       )
     ),
@@ -58,7 +58,7 @@ function initializeClientAndServer(
       [
         ts.createVariableDeclaration(
           jsonDescriptorIdentifier,
-          null,
+          undefined,
           ts.createCall(
             ts.createPropertyAccess(ts.createIdentifier("JSON"), "parse"),
             [],
@@ -72,7 +72,7 @@ function initializeClientAndServer(
       [
         ts.createVariableDeclaration(
           rootIdentifier,
-          null,
+          undefined,
           ts.createCall(
             ts.createPropertyAccess(
               ts.createPropertyAccess(ts.createIdentifier("pbjs"), "Root"),
@@ -89,7 +89,7 @@ function initializeClientAndServer(
       [
         ts.createVariableDeclaration(
           packageDefinitionIdentifier,
-          null,
+          undefined,
           ts.createCall(
             ts.createIdentifier("loadSync"),
             [],
@@ -103,7 +103,7 @@ function initializeClientAndServer(
       [
         ts.createVariableDeclaration(
           "clients",
-          null,
+          undefined,
           ts.createCall(
             ts.createPropertyAccess(
               ts.createIdentifier("tfapi"),
@@ -120,7 +120,7 @@ function initializeClientAndServer(
       [
         ts.createVariableDeclaration(
           "services",
-          null,
+          undefined,
           ts.createCall(
             ts.createPropertyAccess(
               ts.createIdentifier("tfapi"),
@@ -223,9 +223,9 @@ function buildField(jsonNode: pbjs.Field, name: string): ts.TypeElement {
   return ts.createPropertySignature(
     [],
     name,
-    isOptional ? ts.createToken(ts.SyntaxKind.QuestionToken) : null,
+    isOptional ? ts.createToken(ts.SyntaxKind.QuestionToken) : undefined,
     mapTypes(jsonNode),
-    null
+    undefined
   );
 }
 
@@ -239,7 +239,7 @@ function buildOneOf(jsonNode: pbjs.OneOf, name: string): ts.TypeElement {
     name,
     ts.createToken(ts.SyntaxKind.QuestionToken),
     ts.createUnionTypeNode(fieldNameLiterals),
-    null
+    undefined
   );
 }
 
@@ -282,9 +282,8 @@ function mapTypes(field: pbjs.Field): ts.TypeNode {
       returnType = ts.createTypeReferenceNode("Uint8Array", []);
       break;
     default:
-      // TODO: custom parsers go here
       returnType = ts.createTypeReferenceNode(
-        field.resolvedType.fullName.slice(1),
+        field.resolvedType? field.resolvedType.fullName.slice(1) : "any",
         []
       );
       break;
@@ -299,9 +298,9 @@ function mapTypes(field: pbjs.Field): ts.TypeNode {
           ts.createParameter(
             [],
             [],
-            null,
+            undefined,
             "key",
-            null,
+            undefined,
             ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
           )
         ],
@@ -331,12 +330,12 @@ function buildMethods(method: pbjs.Method, name: string): ts.TypeElement {
   return ts.createPropertySignature(
     [],
     name,
-    null,
+    undefined,
     ts.createTypeReferenceNode("tfapi.Endpoint", [
       ts.createTypeReferenceNode(method.requestType, []),
       ts.createTypeReferenceNode(method.responseType, [])
     ]),
-    null
+    undefined
   );
 }
 
@@ -346,7 +345,7 @@ function buildSourceFile(statements: ts.Statement[]) {
       [],
       [],
       ts.createImportClause(
-        null,
+        undefined,
         ts.createNamespaceImport(ts.createIdentifier("tfapi"))
       ),
       ts.createLiteral("@types-first-api/core")
@@ -355,7 +354,7 @@ function buildSourceFile(statements: ts.Statement[]) {
       [],
       [],
       ts.createImportClause(
-        null,
+        undefined,
         ts.createNamespaceImport(ts.createIdentifier("pbjs"))
       ),
       ts.createLiteral("protobufjs")
@@ -364,7 +363,7 @@ function buildSourceFile(statements: ts.Statement[]) {
       [],
       [],
       ts.createImportClause(
-        null,
+        undefined,
         ts.createNamedImports([
           ts.createImportSpecifier(undefined, ts.createIdentifier("loadSync"))
         ])

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+service TestService {
+  rpc increment(IncrementRequest) returns (IncrementResponse);
+  rpc concat(ConcatRequest) returns (ConcatResponse);
+}
+
+message IncrementRequest {
+  required int32 val = 1;
+  int32 add = 2;
+}
+
+message IncrementResponse {
+  required int32 val = 1;
+}
+
+message ConcatRequest {
+  required string val = 1;
+  string add = 2;
+}
+
+message ConcatResponse {
+  required string val = 1;
+}

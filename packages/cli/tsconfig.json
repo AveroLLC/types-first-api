@@ -5,7 +5,10 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": false,
     "declaration": true,
-    "outDir": "dest"
+    "outDir": "dest",
+    "strictNullChecks": true,
+    "strict": true,
+    "skipLibCheck": true
   },
   "files": ["src/index.ts"],
   "exclude": ["node_modules"]
