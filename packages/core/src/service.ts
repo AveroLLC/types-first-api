@@ -1,4 +1,5 @@
 import * as _ from "lodash";
+import * as pbjs from "protobufjs";
 import { defer, throwError, from, isObservable } from "rxjs";
 import { catchError } from "rxjs/operators";
 import { Context } from "./context";
@@ -11,7 +12,7 @@ import {
 import { GRPCService, Request, Response } from "./interfaces";
 import { createMessageValidator } from "./middleware/messageValidation";
 import { shortCircuitRace } from "./shortCircuitRace";
-import { MethodDefinition, ServiceDefinition } from "@grpc/proto-loader";
+import { Method } from "protobufjs";
 
 export interface Handler<TReq, TRes, TDependencies extends object = {}> {
   (request$: Request<TReq>, context: Context, dependencies: TDependencies):
@@ -19,8 +20,8 @@ export interface Handler<TReq, TRes, TDependencies extends object = {}> {
     | Promise<TRes>;
 }
 
-type RequestDetails<TReq, TRes> = {
-  method: MethodDefinition<TReq, TRes> & { name: string };
+type RequestDetails = {
+  method: Method;
 };
 
 export interface Middleware<
@@ -36,10 +37,7 @@ export interface Middleware<
       context: Context,
       dependencies?: TDependencies
     ) => Response<TService[keyof TService]["response"]>,
-    requestDetails: RequestDetails<
-      TService[keyof TService]["request"],
-      TService[keyof TService]["response"]
-    >
+    requestDetails: RequestDetails
   ): Response<TService[keyof TService]["response"]>;
 }
 
@@ -64,18 +62,13 @@ export class Service<
   >;
   private _dependencies: TDependencies;
   private _middleware: Middleware<TService, TDependencies>[] = [];
-  serviceDefinition: ServiceDefinition;
-  serviceName: string;
+  pbjsService: pbjs.Service;
 
-  constructor(
-    serviceName: string,
-    serviceDefinition: ServiceDefinition,
-    dependencies: TDependencies
-  ) {
-    this.serviceDefinition = serviceDefinition;
+  constructor(protoService: pbjs.Service, dependencies: TDependencies) {
     this._dependencies = dependencies;
+    this.pbjsService = protoService;
+    this.pbjsService.resolveAll();
     this.addMiddleware(createMessageValidator());
-    this.serviceName = serviceName;
   }
 
   private _notImplemented = (methodName: keyof TService) => () => {
@@ -112,12 +105,8 @@ export class Service<
     context: Context
   ): Response<TService[K]["response"]> => {
     const handler = this._handlers[method] || this._notImplemented(method);
-    const methodDefinition = this.serviceDefinition[method as string];
     const requestDetails = {
-      method: {
-        name: methodDefinition.originalName,
-        ...methodDefinition
-      }
+      method: this.pbjsService.methods[method as string]
     };
 
     const handlerNext = (
@@ -151,10 +140,10 @@ export class Service<
   };
 
   getName = (): string => {
-    return this.serviceName;
+    return this.pbjsService.fullName.slice(1);
   };
 
   getMethodNames = (): Array<keyof TService> => {
-    return Object.keys(this.serviceDefinition) as Array<keyof TService>;
+    return this.pbjsService.methodsArray.map(m => m.name) as  Array<keyof TService>;
   };
 }

@@ -5,7 +5,7 @@ import { DEFAULT_SERVER_ERROR, IError, StatusCodes } from "./errors";
 import { Service } from "./service";
 import { pbjsService, TestService } from "./testData";
 import { get } from "lodash";
-import {loadSync, MethodDefinition, ServiceDefinition} from "@grpc/proto-loader";
+
 import * as pbjs from 'protobufjs';
 
 
@@ -24,12 +24,9 @@ describe("Service", () => {
     justTen: () => 10
   };
 
-  const packageDefinition = loadSync('./protos/Test.proto');
-    console.log(packageDefinition);
   beforeEach(() => {
     s = new Service<TestService, Dependencies>(
-      "TestService",
-      packageDefinition['TestService'] as ServiceDefinition,
+     pbjsService,
       {
         usersSvc
       }

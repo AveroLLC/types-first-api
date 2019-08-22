@@ -15,11 +15,12 @@ const PROTO_OPTIONS = {
 
 export function createMessageValidator(): Middleware<any, any> {
   return (req$, ctx, deps, next, { method }) => {
+    const reqMessage = method.resolvedRequestType;
+    const resMessage = method.resolvedResponseType;
     const validated$ = req$.pipe(
       map(d => {
-        try {
-          method.requestSerialize(d);
-        } catch (validationError) {
+        const validationError = reqMessage.verify(d);
+        if (validationError) {
           const err: IError = {
             code: StatusCodes.BadRequest,
             message: validationError,
@@ -28,12 +29,12 @@ export function createMessageValidator(): Middleware<any, any> {
           };
           throw err;
         }
-        return d;
+        return reqMessage.toObject(reqMessage.create(d));
       })
     );
     return from(next(validated$, ctx)).pipe(
       map(d => {
-        return d
+        return resMessage.toObject(resMessage.create(d), PROTO_OPTIONS);
       })
     );
   };
