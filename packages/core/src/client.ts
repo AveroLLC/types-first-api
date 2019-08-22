@@ -1,11 +1,11 @@
-import * as _ from 'lodash';
-import { defer, isObservable, of, throwError } from 'rxjs'
-import { catchError } from 'rxjs/operators';
-import { Context } from './context';
-import { createError, DEFAULT_CLIENT_ERROR } from './errors';
-import { GRPCService, Request, Response } from './interfaces';
-import { shortCircuitRace } from './shortCircuitRace';
-import {MethodDefinition, ServiceDefinition} from "@grpc/proto-loader";
+import * as _ from "lodash";
+import { defer, isObservable, Observable, of, throwError } from "rxjs";
+import { catchError } from "rxjs/operators";
+import { Context } from "./context";
+import { createError, DEFAULT_CLIENT_ERROR } from "./errors";
+import { GRPCService, Request, Response } from "./interfaces";
+import { shortCircuitRace } from "./shortCircuitRace";
+import { MethodDefinition, ServiceDefinition } from "@grpc/proto-loader";
 
 export type RpcCall<TReq, TRes> = (
   req: Request<TReq> | TReq,
@@ -19,14 +19,16 @@ export type RpcCallMap<TService extends GRPCService<TService>> = {
   >;
 };
 
+export type NextFunction<TService extends GRPCService<TService>> = (
+  request: Request<TService[keyof TService]["request"]>,
+  context: Context
+) => Response<TService[keyof TService]["response"]>;
+
 export interface ClientMiddleware<TService extends GRPCService<TService>> {
   (
     request$: Request<TService[keyof TService]["request"]>,
     context: Context,
-    next: (
-      request: Request<TService[keyof TService]["request"]>,
-      context: Context
-    ) => Response<TService[keyof TService]["response"]>,
+    next: NextFunction<TService>,
     methodName: keyof TService
   ): Response<TService[keyof TService]["response"]>;
 }
@@ -49,25 +51,30 @@ export abstract class Client<TService extends GRPCService<TService>> {
   private _middleware: ClientMiddleware<TService>[] = [];
 
   protected serviceDefinition: ServiceDefinition;
-  protected options:  ClientOptions;
+  protected options: ClientOptions;
   rpc: RpcCallMap<TService>;
   serviceName: string;
 
-  constructor(serviceName: string, protoService: ServiceDefinition, address: ClientAddress, options: ClientOptions = {}) {
+  constructor(
+    serviceName: string,
+    protoService: ServiceDefinition,
+    address: ClientAddress,
+    options: ClientOptions = {}
+  ) {
     this.serviceDefinition = protoService;
     this.options = options;
     this.serviceName = serviceName;
-    this.rpc = _.mapValues<Record<string, MethodDefinition<any, any>>, RpcCall<any, any>>(
-      protoService,
-      (m, methodName) => {
-        return (req, ctx) => {
-          if (ctx == null) {
-            ctx = Context.create();
-          }
-          return this.invokeCall(methodName as keyof TService, req, ctx);
-        };
-      }
-    ) as RpcCallMap<TService>;
+    this.rpc = _.mapValues<
+      Record<string, MethodDefinition<any, any>>,
+      RpcCall<any, any>
+    >(protoService, (m, methodName) => {
+      return (req, ctx) => {
+        if (ctx == null) {
+          ctx = Context.create();
+        }
+        return this.invokeCall(methodName as keyof TService, req, ctx);
+      };
+    }) as RpcCallMap<TService>;
   }
 
   abstract _call<K extends keyof TService>(
@@ -81,7 +88,7 @@ export abstract class Client<TService extends GRPCService<TService>> {
   };
 
   getName = () => {
-    return this.serviceName
+    return this.serviceName;
   };
 
   private invokeCall = <K extends keyof TService>(
@@ -92,22 +99,22 @@ export abstract class Client<TService extends GRPCService<TService>> {
     // TODO:
     // should I do a context.from here? if so, what happens to metadata?
     // do I need to race with context cancel?
-    const handlerNext = (
+    const handlerNext: NextFunction<TService> = (
       req$: Request<TService[K]["request"]>,
       ctx: Context
-    ) => {
+    ): Response<TService[K]["response"]> => {
       return this._call(methodName, req$, ctx);
     };
 
-    const stack = _.reduceRight(
-      this._middleware,
-      (next, middleware) => {
+    const stack = this._middleware
+      .reverse()
+      .reduce((next: NextFunction<TService>, middleware): NextFunction<
+        TService
+      > => {
         return (req$, ctx: Context) => {
           return middleware(req$, ctx, next, methodName);
         };
-      },
-      handlerNext
-    );
+      }, handlerNext);
 
     const response$ = shortCircuitRace(
       context.cancel$,
