@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/grpc-client",
-  "version": "0.0.17",
+  "version": "0.1.0",
   "description": "Types-First API HTTP client",
   "publishConfig": {
     "access": "public"
@@ -16,11 +16,10 @@
     "generate": "tfapi -o generated protos/Test.proto"
   },
   "dependencies": {
+    "@types-first-api/core": "^0.1.0",
+    "@types-first-api/grpc-common": "^0.1.0",
     "@grpc/grpc-js": "^0.5.2",
-    "@grpc/proto-loader": "^0.5.1",
-    "@types-first-api/core": "file:../core/types-first-api-core-0.0.17.tgz",
-    "@types-first-api/grpc-common": "^0.0.17",
-    "protobufjs": "^6.8.8"
+    "@grpc/proto-loader": "^0.5.1"
   },
   "peerDependencies": {
     "rxjs": "^6.3.3"
@@ -28,8 +27,8 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types-first-api/cli": "file:../cli/types-first-api-cli-0.0.17.tgz",
-    "@types-first-api/grpc-server": "0.0.17",
+    "@types-first-api/cli": "^0.1.0",
+    "@types-first-api/grpc-server": "^0.1.0",
     "@types/lodash": "^4.14.116",
     "protobufjs": "^6.8.8"
   },
