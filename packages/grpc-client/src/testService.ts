@@ -1,5 +1,6 @@
 import * as tfapi from '@types-first-api/core';
 import * as pbjs from 'protobufjs';
+import {loadSync} from '@grpc/proto-loader';
 
 export namespace hello {
     export namespace peeps {
@@ -27,5 +28,4 @@ var jsonDescriptor = JSON.parse(
 );
 
 var root = pbjs.Root.fromJSON(jsonDescriptor);
-export var clients = tfapi.clientFactory<Services>(root);
 export var services = tfapi.serviceFactory<Services>(root);

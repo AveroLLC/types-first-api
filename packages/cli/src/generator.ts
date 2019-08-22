@@ -1,7 +1,7 @@
-import * as _ from 'lodash';
-import * as pbjs from 'protobufjs';
-import * as ts from 'typescript';
-import {loadSync, PackageDefinition} from "@grpc/proto-loader";
+import * as _ from "lodash";
+import * as pbjs from "protobufjs";
+import * as ts from "typescript";
+import * as path from "path";
 
 /*
 So you're digging around in here and want to make some changes, huh?
@@ -15,17 +15,26 @@ Good luck!
 */
 
 export default function generate(protoPath: string): string {
-  const root : PackageDefinition = loadSync(protoPath);
+  const root = pbjs.loadSync(protoPath);
+  root.resolveAll();
   const interfaces = parseNode(root);
-  const clientServer = initializeClientAndServer(root);
+  const clientServer = initializeClientAndServer(
+    root,
+    path.basename(protoPath)
+  );
+
   return buildSourceFile([...interfaces, ...clientServer]);
 }
 
-function initializeClientAndServer(root: PackageDefinition): ts.Statement[] {
+function initializeClientAndServer(
+  root: pbjs.Root,
+  protoFilename: string
+): ts.Statement[] {
   const serviceNames = createServiceList(root);
-  const serviceDefinitionsIdentifier = ts.createIdentifier('Services');
-  const jsonDescriptorIdentifier = ts.createIdentifier('jsonDescriptor');
-  const rootIdentifier = ts.createIdentifier('root');
+  const serviceDefinitionsIdentifier = ts.createIdentifier("Services");
+  const jsonDescriptorIdentifier = ts.createIdentifier("jsonDescriptor");
+  const rootIdentifier = ts.createIdentifier("root");
+  const packageDefinitionIdentifier = ts.createIdentifier("packageDefinition");
 
   return [
     ts.createInterfaceDeclaration(
@@ -51,11 +60,11 @@ function initializeClientAndServer(root: PackageDefinition): ts.Statement[] {
           jsonDescriptorIdentifier,
           null,
           ts.createCall(
-            ts.createPropertyAccess(ts.createIdentifier('JSON'), 'parse'),
+            ts.createPropertyAccess(ts.createIdentifier("JSON"), "parse"),
             [],
             [ts.createLiteral(JSON.stringify(root))]
           )
-        ),
+        )
       ]
     ),
     ts.createVariableStatement(
@@ -66,43 +75,63 @@ function initializeClientAndServer(root: PackageDefinition): ts.Statement[] {
           null,
           ts.createCall(
             ts.createPropertyAccess(
-              ts.createPropertyAccess(ts.createIdentifier('pbjs'), 'Root'),
-              'fromJSON'
+              ts.createPropertyAccess(ts.createIdentifier("pbjs"), "Root"),
+              "fromJSON"
             ),
             [],
             [jsonDescriptorIdentifier]
           )
-        ),
+        )
+      ]
+    ),
+    ts.createVariableStatement(
+      [],
+      [
+        ts.createVariableDeclaration(
+          packageDefinitionIdentifier,
+          null,
+          ts.createCall(
+            ts.createIdentifier("loadSync"),
+            [],
+            [ts.createLiteral(`../protos/${protoFilename}`)]
+          )
+        )
       ]
     ),
     ts.createVariableStatement(
       [ts.createToken(ts.SyntaxKind.ExportKeyword)],
       [
         ts.createVariableDeclaration(
-          'clients',
+          "clients",
           null,
           ts.createCall(
-            ts.createPropertyAccess(ts.createIdentifier('tfapi'), 'clientFactory'),
+            ts.createPropertyAccess(
+              ts.createIdentifier("tfapi"),
+              "clientFactory"
+            ),
             [ts.createTypeReferenceNode(serviceDefinitionsIdentifier, [])],
-            [rootIdentifier]
+            [packageDefinitionIdentifier]
           )
-        ),
+        )
       ]
     ),
     ts.createVariableStatement(
       [ts.createToken(ts.SyntaxKind.ExportKeyword)],
       [
         ts.createVariableDeclaration(
-          'services',
+          "services",
           null,
           ts.createCall(
-            ts.createPropertyAccess(ts.createIdentifier('tfapi'), 'serviceFactory'),
+            ts.createPropertyAccess(
+              ts.createIdentifier("tfapi"),
+              "serviceFactory"
+            ),
             [ts.createTypeReferenceNode(serviceDefinitionsIdentifier, [])],
             [rootIdentifier]
           )
-        ),
+        )
       ]
-    ),
+    )
   ];
 }
 
@@ -138,7 +167,7 @@ function isService(obj: any): obj is pbjs.Service {
   return obj.methods != null;
 }
 
-function parseNode(jsonNode: any, name = ''): ts.Statement[] {
+function parseNode(jsonNode: any, name = ""): ts.Statement[] {
   const statements = [];
   if (isNamespace(jsonNode)) {
     statements.push(...buildNamespace(jsonNode, name));
@@ -155,10 +184,13 @@ function parseNode(jsonNode: any, name = ''): ts.Statement[] {
   return statements;
 }
 
-function buildNamespace(jsonNode: pbjs.Namespace, name: string): ts.Statement[] {
+function buildNamespace(
+  jsonNode: pbjs.Namespace,
+  name: string
+): ts.Statement[] {
   const children = _.flatMap(jsonNode.nested, parseNode);
 
-  if (name === '') {
+  if (name === "") {
     return children;
   }
 
@@ -169,7 +201,7 @@ function buildNamespace(jsonNode: pbjs.Namespace, name: string): ts.Statement[] 
       ts.createIdentifier(name),
       ts.createModuleBlock(children),
       ts.NodeFlags.Namespace
-    ),
+    )
   ];
 }
 
@@ -187,7 +219,7 @@ function buildMessage(jsonNode: pbjs.Type, name: string): ts.Statement {
 }
 
 function buildField(jsonNode: pbjs.Field, name: string): ts.TypeElement {
-  const isOptional = jsonNode.rule !== 'required';
+  const isOptional = jsonNode.rule !== "required";
   return ts.createPropertySignature(
     [],
     name,
@@ -226,32 +258,35 @@ function buildEnum(jsonNode: pbjs.Enum, name: string): ts.Statement {
 function mapTypes(field: pbjs.Field): ts.TypeNode {
   let returnType: ts.TypeNode;
   switch (field.type) {
-    case 'double':
-    case 'float':
-    case 'int32':
-    case 'int64':
-    case 'uint32':
-    case 'uint64':
-    case 'sint32':
-    case 'sint64':
-    case 'fixed32':
-    case 'fixed64':
-    case 'sfixed32':
-    case 'sfixed64':
+    case "double":
+    case "float":
+    case "int32":
+    case "int64":
+    case "uint32":
+    case "uint64":
+    case "sint32":
+    case "sint64":
+    case "fixed32":
+    case "fixed64":
+    case "sfixed32":
+    case "sfixed64":
       returnType = ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
       break;
-    case 'bool':
+    case "bool":
       returnType = ts.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword);
       break;
-    case 'string':
+    case "string":
       returnType = ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
       break;
-    case 'bytes':
-      returnType = ts.createTypeReferenceNode('Uint8Array', []);
+    case "bytes":
+      returnType = ts.createTypeReferenceNode("Uint8Array", []);
       break;
     default:
       // TODO: custom parsers go here
-      returnType = ts.createTypeReferenceNode(field.resolvedType.fullName.slice(1), []);
+      returnType = ts.createTypeReferenceNode(
+        field.resolvedType.fullName.slice(1),
+        []
+      );
       break;
   }
 
@@ -265,15 +300,15 @@ function mapTypes(field: pbjs.Field): ts.TypeNode {
             [],
             [],
             null,
-            'key',
+            "key",
             null,
             ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
-          ),
+          )
         ],
         returnType
-      ),
+      )
     ]);
-  } else if (field.rule === 'repeated') {
+  } else if (field.rule === "repeated") {
     returnType = ts.createArrayTypeNode(returnType);
   }
 
@@ -297,9 +332,9 @@ function buildMethods(method: pbjs.Method, name: string): ts.TypeElement {
     [],
     name,
     null,
-    ts.createTypeReferenceNode('tfapi.Endpoint', [
+    ts.createTypeReferenceNode("tfapi.Endpoint", [
       ts.createTypeReferenceNode(method.requestType, []),
-      ts.createTypeReferenceNode(method.responseType, []),
+      ts.createTypeReferenceNode(method.responseType, [])
     ]),
     null
   );
@@ -310,27 +345,46 @@ function buildSourceFile(statements: ts.Statement[]) {
     ts.createImportDeclaration(
       [],
       [],
-      ts.createImportClause(null, ts.createNamespaceImport(ts.createIdentifier('tfapi'))),
-      // ts.createLiteral('rxjs-protos') // TODO: uncomment this
-      ts.createLiteral('@types-first-api/core')
+      ts.createImportClause(
+        null,
+        ts.createNamespaceImport(ts.createIdentifier("tfapi"))
+      ),
+      ts.createLiteral("@types-first-api/core")
     ),
     ts.createImportDeclaration(
       [],
       [],
-      ts.createImportClause(null, ts.createNamespaceImport(ts.createIdentifier('pbjs'))),
-      ts.createLiteral('protobufjs')
+      ts.createImportClause(
+        null,
+        ts.createNamespaceImport(ts.createIdentifier("pbjs"))
+      ),
+      ts.createLiteral("protobufjs")
     ),
+    ts.createImportDeclaration(
+      [],
+      [],
+      ts.createImportClause(
+        null,
+        ts.createNamedImports([
+          ts.createImportSpecifier(undefined, ts.createIdentifier("loadSync"))
+        ])
+      ),
+      ts.createLiteral("@grpc/proto-loader")
+    )
   ];
   let resultFile = ts.createSourceFile(
-    'someFileName.ts',
-    '',
+    "someFileName.ts",
+    "",
     ts.ScriptTarget.Latest,
     /*setParentNodes*/ false,
     ts.ScriptKind.TS
   );
-  resultFile = ts.updateSourceFileNode(resultFile, [...importStatements, ...statements]);
+  resultFile = ts.updateSourceFileNode(resultFile, [
+    ...importStatements,
+    ...statements
+  ]);
   const printer = ts.createPrinter({
-    newLine: ts.NewLineKind.LineFeed,
+    newLine: ts.NewLineKind.LineFeed
   });
   return printer.printFile(resultFile);
 }

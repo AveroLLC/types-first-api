@@ -6,11 +6,10 @@ import {
   IError,
   StatusCodes
 } from "@types-first-api/core";
-import * as _ from "lodash";
-import * as pbjs from "protobufjs";
 import { Observable } from "rxjs";
-import { GrpcClient , GrpcClientOptions} from "./grpcClient";
+import { GrpcClient, GrpcClientOptions } from "./grpcClient";
 import { catchError } from "rxjs/operators";
+import { ServiceDefinition } from "@grpc/proto-loader";
 
 interface PoolEntry<TService extends GRPCService<TService>> {
   initTime: number;
@@ -33,7 +32,6 @@ export type PooledGrpcClientOptions = GrpcClientOptions & {
 
  */
 
-
 export class PooledGrpcClient<
   TService extends GRPCService<TService>
 > extends Client<TService> {
@@ -48,15 +46,18 @@ export class PooledGrpcClient<
   private readonly grpcOptions: PooledGrpcClientOptions;
 
   constructor(
-    private protoService: pbjs.Service,
-    private address: ClientAddress,
+    public serviceName: string,
+    public serviceDefinition: ServiceDefinition,
+    public address: ClientAddress,
     options: PooledGrpcClientOptions = {}
   ) {
-    super(protoService, address, options.client || {});
+    super(serviceName, serviceDefinition, address, options.client || {});
     this.grpcOptions = options;
-    this.CONNECTION_POOL_SIZE = options.pool && options.pool.connectionPoolSize || 12;
-    this.MAX_CLIENT_LIFE_MS = options.pool && options.pool.maxClientLifeMs || 30e3;
-    this._clientPool = _.range(this.CONNECTION_POOL_SIZE).map((_, index) =>
+    this.CONNECTION_POOL_SIZE =
+      (options.pool && options.pool.connectionPoolSize) || 12;
+    this.MAX_CLIENT_LIFE_MS =
+      (options.pool && options.pool.maxClientLifeMs) || 30e3;
+    this._clientPool = Array(this.CONNECTION_POOL_SIZE).map((_, index) =>
       this.createPoolEntry(index)
     );
   }
@@ -108,7 +109,8 @@ export class PooledGrpcClient<
   private createPoolEntry = (index: number): PoolEntry<TService> => {
     return {
       client: new GrpcClient<TService>(
-        this.protoService,
+        this.serviceName,
+        this.serviceDefinition,
         this.address,
         this.grpcOptions
       ),

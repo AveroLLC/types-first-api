@@ -19,8 +19,6 @@
     "@grpc/proto-loader": "^0.5.1",
     "@types-first-api/core": "^0.0.17",
     "@types-first-api/grpc-common": "^0.0.17",
-    "grpc": "^1.15.1",
-    "lodash": "^4.17.10",
     "protobufjs": "^6.8.8"
   },
   "peerDependencies": {
