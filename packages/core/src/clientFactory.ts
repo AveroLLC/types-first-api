@@ -32,7 +32,7 @@ export function clientFactory<TServices extends GRPCServiceMap<TServices>>(
       );
     }
 
-    return new ClientImpl(service, address, options)
+    return new ClientImpl(serviceName, service, address, options)
   }
 
   return { create };

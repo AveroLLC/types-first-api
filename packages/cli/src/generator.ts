@@ -18,17 +18,16 @@ export default function generate(protoPath: string): string {
   const root = pbjs.loadSync(protoPath);
   root.resolveAll();
   const interfaces = parseNode(root);
-  const clientServer = initializeClientAndServer(
-    root,
-    path.basename(protoPath)
-  );
+
+  const relativeProtoPath = path.relative(__dirname, protoPath);
+  const clientServer = initializeClientAndServer(root, relativeProtoPath);
 
   return buildSourceFile([...interfaces, ...clientServer]);
 }
 
 function initializeClientAndServer(
   root: pbjs.Root,
-  protoFilename: string
+  relativeProtoPath: string
 ): ts.Statement[] {
   const serviceNames = createServiceList(root);
   const serviceDefinitionsIdentifier = ts.createIdentifier("Services");
@@ -93,7 +92,16 @@ function initializeClientAndServer(
           ts.createCall(
             ts.createIdentifier("loadSync"),
             [],
-            [ts.createLiteral(`../protos/${protoFilename}`)]
+            [
+              ts.createCall(
+                ts.createPropertyAccess(ts.createIdentifier("path"), "resolve"),
+                [],
+                [
+                  ts.createIdentifier("__dirname"),
+                  ts.createLiteral(relativeProtoPath)
+                ]
+              )
+            ]
           )
         )
       ]
@@ -283,7 +291,7 @@ function mapTypes(field: pbjs.Field): ts.TypeNode {
       break;
     default:
       returnType = ts.createTypeReferenceNode(
-        field.resolvedType? field.resolvedType.fullName.slice(1) : "any",
+        field.resolvedType ? field.resolvedType.fullName.slice(1) : "any",
         []
       );
       break;
@@ -369,6 +377,15 @@ function buildSourceFile(statements: ts.Statement[]) {
         ])
       ),
       ts.createLiteral("@grpc/proto-loader")
+    ),
+    ts.createImportDeclaration(
+      [],
+      [],
+      ts.createImportClause(
+        undefined,
+        ts.createNamespaceImport(ts.createIdentifier("path"))
+      ),
+      ts.createLiteral("path")
     )
   ];
   let resultFile = ts.createSourceFile(

@@ -10,6 +10,7 @@ import { Observable } from "rxjs";
 import { GrpcClient, GrpcClientOptions } from "./grpcClient";
 import { catchError } from "rxjs/operators";
 import { ServiceDefinition } from "@grpc/proto-loader";
+import * as _ from 'lodash';
 
 interface PoolEntry<TService extends GRPCService<TService>> {
   initTime: number;
@@ -57,9 +58,9 @@ export class PooledGrpcClient<
       (options.pool && options.pool.connectionPoolSize) || 12;
     this.MAX_CLIENT_LIFE_MS =
       (options.pool && options.pool.maxClientLifeMs) || 30e3;
-    this._clientPool = Array(this.CONNECTION_POOL_SIZE).map((_, index) =>
-      this.createPoolEntry(index)
-    );
+    for(let i = 0; i < this.CONNECTION_POOL_SIZE; ++i) {
+      this._clientPool.push(this.createPoolEntry(i));
+    }
   }
 
   _call<K extends keyof TService>(

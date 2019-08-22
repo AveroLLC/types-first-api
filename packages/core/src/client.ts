@@ -34,9 +34,10 @@ export interface ClientMiddleware<TService extends GRPCService<TService>> {
 }
 
 export type ClientConstructor<TService extends GRPCService<TService>> = new (
-  protoService: ServiceDefinition,
-  address: ClientAddress,
-  options?: Record<string, any>
+    serviceName: string,
+    protoService: ServiceDefinition,
+    address: ClientAddress,
+    options: Record<string, any>
 ) => Client<TService>;
 
 export interface ClientAddress {

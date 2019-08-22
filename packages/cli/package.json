@@ -11,7 +11,7 @@
     "dest"
   ],
   "scripts": {
-    "test": "jest",
+    "test": "npm run prepare && ./dest/index.js -o protos protos/Test.proto",
     "prepare": "tsc"
   },
   "bin": {
@@ -21,7 +21,6 @@
     "@grpc/proto-loader": "^0.5.1",
     "@types-first-api/core": "^0.0.17",
     "commander": "^2.19.0",
-    "lodash": "^4.17.10",
     "mkdirp": "^0.5.1",
     "typescript": "^3.5.3"
   },

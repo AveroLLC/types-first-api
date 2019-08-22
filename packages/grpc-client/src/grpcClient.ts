@@ -18,6 +18,7 @@ import { catchError } from "rxjs/operators";
 import { ServiceDefinition, MethodDefinition } from "@grpc/proto-loader";
 import * as grpc from "@grpc/grpc-js";
 
+
 export interface GrpcClientOptions {
   grpcClient?: Record<string, string | number>;
   client?: ClientOptions;
@@ -130,17 +131,21 @@ export class GrpcClient<TService extends GRPCService<TService>> extends Client<
     });
 
     // errors are dealt with in the status handler
-    call.on("error", () => {});
+    call.on("error", (error: grpc.ServiceError) => {
+      console.log(error);
+    });
     call.on("status", (status: grpc.StatusObject) => {
       cancelSubscription.unsubscribe();
       if (status.code === grpc.status.OK) {
         return response$.complete();
       }
       const serializedError = status.metadata.get(HEADERS.TRAILER_ERROR);
+      console.log(status.metadata.getMap());
       let err: IError;
       if (serializedError != null && serializedError.length > 0) {
         try {
-          err = JSON.parse(serializedError[0].toString());
+          console.log(serializedError.join(','));
+          err = JSON.parse((serializedError).join(',').toString());
         } catch (e) {
           err = normalizeGrpcError(status, { ...DEFAULT_CLIENT_ERROR });
         }

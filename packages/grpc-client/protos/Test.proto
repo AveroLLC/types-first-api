@@ -1,24 +1,24 @@
 syntax = "proto3";
+package hello.peeps;
 
-service TestService {
-  rpc increment(IncrementRequest) returns (IncrementResponse);
-  rpc concat(ConcatRequest) returns (ConcatResponse);
+// The greeting service definition.
+service GreeterService {
+  // Sends multiple greetings
+  rpc UnaryHello (HelloRequest) returns (HelloReply) {}
+  rpc ClientStreamHello (stream HelloRequest) returns (HelloReply) {}
+  rpc ServerStreamHello (HelloRequest) returns (stream HelloReply) {}
+  rpc BidiStreamHello (HelloRequest) returns (stream HelloReply) {}
+  rpc WhitelistedHello (HelloRequest) returns (HelloReply) {}
 }
 
-message IncrementRequest {
-  required int32 val = 1;
-  int32 add = 2;
+// The request message containing the user's name and how many greetings
+// they want.
+message HelloRequest {
+  string name = 1;
+  string num_greetings = 2;
 }
 
-message IncrementResponse {
-  required int32 val = 1;
-}
-
-message ConcatRequest {
-  required string val = 1;
-  string add = 2;
-}
-
-message ConcatResponse {
-  required string val = 1;
+// A response message containing a greeting
+message HelloReply {
+  string message = 1;
 }
