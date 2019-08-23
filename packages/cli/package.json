@@ -32,6 +32,7 @@
   "license": "Apache-2.0",
   "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac",
   "devDependencies": {
+    "@types/lodash": "^4.14.137",
     "@types/long": "^4.0.0",
     "@types/mkdirp": "^0.5.2",
     "@types/node": "^12.7.2",

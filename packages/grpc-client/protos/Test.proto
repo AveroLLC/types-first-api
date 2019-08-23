@@ -4,18 +4,20 @@ package hello.peeps;
 // The greeting service definition.
 service GreeterService {
   // Sends multiple greetings
-  rpc UnaryHello (HelloRequest) returns (HelloReply) {}
-  rpc ClientStreamHello (stream HelloRequest) returns (HelloReply) {}
-  rpc ServerStreamHello (HelloRequest) returns (stream HelloReply) {}
-  rpc BidiStreamHello (HelloRequest) returns (stream HelloReply) {}
-  rpc WhitelistedHello (HelloRequest) returns (HelloReply) {}
+  rpc Hello (HelloRequest) returns (HelloReply) {}
+  rpc UnavailableHello (HelloRequest) returns (HelloReply) {}
+  rpc ConditionallyUnavailableHello (HelloRequest) returns (stream HelloReply) {}
+  rpc AsyncHello (AsyncHelloRequest) returns (stream HelloReply) {}
 }
 
-// The request message containing the user's name and how many greetings
-// they want.
+// The request message containing the user's name
 message HelloRequest {
   string name = 1;
-  string num_greetings = 2;
+}
+
+message AsyncHelloRequest {
+  string name = 1;
+  int32 timeout = 2;
 }
 
 // A response message containing a greeting

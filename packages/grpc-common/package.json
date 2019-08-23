@@ -18,14 +18,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@types-first-api/core": "^0.1.0",
-    "grpc": "^1.15.1",
-    "lodash": "^4.17.11"
-  },
-  "peerDependencies": {
-    "rxjs": "^6.3.3"
-  },
-  "devDependencies": {
-    "@types/lodash": "^4.14.116"
+    "grpc": "^1.15.1"
   },
   "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac"
 }

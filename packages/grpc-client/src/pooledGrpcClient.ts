@@ -10,7 +10,6 @@ import { Observable } from "rxjs";
 import { GrpcClient, GrpcClientOptions } from "./grpcClient";
 import { catchError } from "rxjs/operators";
 import { ServiceDefinition } from "@grpc/proto-loader";
-import * as _ from 'lodash';
 
 interface PoolEntry<TService extends GRPCService<TService>> {
   initTime: number;
@@ -86,11 +85,10 @@ export class PooledGrpcClient<
 
   private replaceClient = (index: number): PoolEntry<TService> => {
     const entry = this._clientPool[index];
-    const replacement = this.createPoolEntry(index);
-    this._clientPool[index] = replacement;
-    entry.client.getClient().close(); // closing a client does not close a channel, so existing requests will still go through
+    this._clientPool[index] = this.createPoolEntry(index);
+    entry.client.getClient().close();
 
-    return replacement;
+    return this._clientPool[index];
   };
 
   private getNextClient = (): PoolEntry<TService> => {
@@ -101,6 +99,7 @@ export class PooledGrpcClient<
 
     // check if we need to refresh the channel
     if (nextEntry.initTime + this.MAX_CLIENT_LIFE_MS < Date.now()) {
+      console.log('closing client', nextEntry.index)
       return this.replaceClient(index);
     }
 
