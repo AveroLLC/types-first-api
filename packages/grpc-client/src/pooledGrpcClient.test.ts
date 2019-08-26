@@ -1,6 +1,11 @@
 import { clients, hello, services } from "../generated/Test";
 import { Observable } from "rxjs";
-import { Context, IError, StatusCodes } from "@types-first-api/core";
+import {
+  Context,
+  DEFAULT_CLIENT_ERROR,
+  IError,
+  StatusCodes
+} from "@types-first-api/core";
 import { GrpcServer } from "@types-first-api/grpc-server";
 import { PooledGrpcClient, PooledGrpcClientOptions } from "./pooledGrpcClient";
 
@@ -20,7 +25,7 @@ async function wait(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const unaryHelloHandler = jest.fn(
+const helloHandler = jest.fn(
   async (
     req$: Observable<hello.peeps.HelloRequest>,
     ctx: Context,
@@ -30,7 +35,19 @@ const unaryHelloHandler = jest.fn(
   }
 );
 
-const unavailableHello = jest.fn(
+const contextHandler = jest.fn(
+  async (
+    req$: Observable<hello.peeps.ContextRequest>,
+    ctx: Context,
+    {}
+  ): Promise<hello.peeps.ContextResponse> => {
+    return {
+      metadata: ctx.metadata
+    };
+  }
+);
+
+const unavailableHelloHandler = jest.fn(
   async (
     req$: Observable<hello.peeps.HelloRequest>,
     ctx: Context,
@@ -93,12 +110,13 @@ const conditionallyAvailableHello = jest.fn(
 
 const service = services.create(serviceName, {});
 
-service.registerServiceHandler("Hello", unaryHelloHandler);
-service.registerServiceHandler("UnavailableHello", unavailableHello);
+service.registerServiceHandler("Hello", helloHandler);
+service.registerServiceHandler("UnavailableHello", unavailableHelloHandler);
 service.registerServiceHandler(
   "ConditionallyUnavailableHello",
   conditionallyAvailableHello
 );
+service.registerServiceHandler("Context", contextHandler);
 service.registerServiceHandler("AsyncHello", asyncHello);
 let server: GrpcServer;
 
@@ -115,7 +133,7 @@ it("maintains a healthy client pool after max client lifetime expires", async ()
       maxClientLifeMs: 1000
     }
   };
-  unaryHelloHandler.mockClear();
+  helloHandler.mockClear();
   server = GrpcServer.createWithOptions({}, service);
   await server.bind(address);
 
@@ -131,7 +149,7 @@ it("maintains a healthy client pool after max client lifetime expires", async ()
 
     expect(response).toEqual(message);
   }
-  expect(unaryHelloHandler).toBeCalledTimes(
+  expect(helloHandler).toBeCalledTimes(
     grpcPooledClientOptions.pool.connectionPoolSize
   );
 
@@ -144,13 +162,13 @@ it("maintains a healthy client pool after max client lifetime expires", async ()
 
     expect(response).toEqual(message);
   }
-  expect(unaryHelloHandler).toBeCalledTimes(
+  expect(helloHandler).toBeCalledTimes(
     grpcPooledClientOptions.pool.connectionPoolSize * 2
   );
 });
 
 it("re-establishes client pool after channels close", async () => {
-  unaryHelloHandler.mockClear();
+  helloHandler.mockClear();
   const grpcPooledClientOptions = {
     pool: { connectionPoolSize: 8 }
   };
@@ -164,13 +182,17 @@ it("re-establishes client pool after channels close", async () => {
     grpcPooledClientOptions
   );
 
-  for (let i = 0; i < grpcPooledClientOptions.pool.connectionPoolSize; ++i) {
+  for (
+    let i = 0;
+    i < grpcPooledClientOptions.pool.connectionPoolSize * 4;
+    ++i
+  ) {
     const response = await client.rpc.Hello({}).toPromise();
 
     expect(response).toEqual(message);
   }
-  expect(unaryHelloHandler).toBeCalledTimes(
-    grpcPooledClientOptions.pool.connectionPoolSize
+  expect(helloHandler).toBeCalledTimes(
+    grpcPooledClientOptions.pool.connectionPoolSize * 4
   );
 
   await server.shutdown();
@@ -178,18 +200,22 @@ it("re-establishes client pool after channels close", async () => {
   server = GrpcServer.createWithOptions({}, service);
   await server.bind(address);
 
-  for (let i = 0; i < grpcPooledClientOptions.pool.connectionPoolSize; ++i) {
+  for (
+    let i = 0;
+    i < grpcPooledClientOptions.pool.connectionPoolSize * 4;
+    ++i
+  ) {
     const response = await client.rpc.Hello({}).toPromise();
 
     expect(response).toEqual(message);
   }
-  expect(unaryHelloHandler).toBeCalledTimes(
-    grpcPooledClientOptions.pool.connectionPoolSize * 2
+  expect(helloHandler).toBeCalledTimes(
+    grpcPooledClientOptions.pool.connectionPoolSize * 8
   );
 });
 
 it("tries a call twice when given an unavailable response", async () => {
-  unavailableHello.mockClear();
+  unavailableHelloHandler.mockClear();
   server = GrpcServer.createWithOptions({}, service);
   await server.bind(address);
 
@@ -201,7 +227,7 @@ it("tries a call twice when given an unavailable response", async () => {
     code: StatusCodes.Unavailable
   });
 
-  expect(unavailableHello).toBeCalledTimes(2);
+  expect(unavailableHelloHandler).toBeCalledTimes(2);
 });
 
 it("retries and gets an appropriate response when given an unavailable error code", async () => {
@@ -222,7 +248,7 @@ it("retries and gets an appropriate response when given an unavailable error cod
 });
 
 it("optionally returns serialized errors", async () => {
-  unavailableHello.mockClear();
+  unavailableHelloHandler.mockClear();
 
   server = GrpcServer.createWithOptions({}, service);
   await server.bind(address);
@@ -251,7 +277,6 @@ it("optionally returns serialized errors", async () => {
   });
 });
 
-
 /*
   The grpc client knows how to wait for the client streaming requests to drain before closing the channel
  */
@@ -278,7 +303,6 @@ it("waits for a client request to drain before closing connection", async () => 
     })
     .toPromise();
 
-
   await wait(options.pool.maxClientLifeMs);
 
   for (let i = 0; i < options.pool.connectionPoolSize; ++i) {
@@ -287,4 +311,35 @@ it("waits for a client request to drain before closing connection", async () => 
   }
 
   await expect(responsePromise).resolves.toEqual(message);
+});
+
+it("has a max metadata size of 65kb", async () => {
+  server = GrpcServer.createWithOptions({}, service);
+  await server.bind(address);
+
+  const client = clients.create(serviceName, address, PooledGrpcClient);
+
+  const smallContext = Context.create({
+    metadata: {
+      token: "a".repeat(65e3)
+    }
+  });
+  const smallContextResponse = await client.rpc
+    .Context({}, smallContext)
+    .toPromise();
+  await expect(smallContextResponse.metadata).toMatchObject(
+    smallContext.metadata
+  );
+
+  const bigContext = Context.create({
+    metadata: {
+      token: "a".repeat(66e3)
+    }
+  });
+  const bigContextResponse = client.rpc.Context({}, bigContext).toPromise();
+
+  await expect(bigContextResponse).rejects.toMatchObject({
+    code: 'Unavailable',
+    message: DEFAULT_CLIENT_ERROR.message
+  });
 });
