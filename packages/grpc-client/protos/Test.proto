@@ -1,0 +1,33 @@
+syntax = "proto3";
+package hello.peeps;
+
+// The greeting service definition.
+service GreeterService {
+  // Sends multiple greetings
+  rpc Hello (HelloRequest) returns (HelloReply) {}
+  rpc UnavailableHello (HelloRequest) returns (HelloReply) {}
+  rpc ConditionallyUnavailableHello (HelloRequest) returns (HelloReply) {}
+  rpc AsyncHello (AsyncHelloRequest) returns (HelloReply) {}
+  rpc Context (ContextRequest) returns (ContextResponse) {}
+}
+
+// The request message containing the user's name
+message ContextRequest {}
+
+message ContextResponse {
+  map<string,string> metadata = 1;
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message AsyncHelloRequest {
+  string name = 1;
+  int32 timeout = 2;
+}
+
+// A response message containing a greeting
+message HelloReply {
+  string message = 1;
+}

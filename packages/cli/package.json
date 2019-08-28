@@ -11,18 +11,18 @@
     "dest"
   ],
   "scripts": {
-    "test": "jest",
+    "test": "npm run prepare && ./dest/index.js -o protos protos/Test.proto",
     "prepare": "tsc"
   },
   "bin": {
     "tfapi": "dest/index.js"
   },
   "dependencies": {
+    "@grpc/proto-loader": "^0.5.1",
     "@types-first-api/core": "^0.1.0",
     "commander": "^2.19.0",
-    "lodash": "^4.17.10",
     "mkdirp": "^0.5.1",
-    "typescript": "3.0.3"
+    "typescript": "^3.5.3"
   },
   "peerDependencies": {
     "protobufjs": "^6.8.8",
@@ -30,5 +30,12 @@
   },
   "author": "",
   "license": "Apache-2.0",
-  "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac"
+  "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac",
+  "devDependencies": {
+    "@types/lodash": "^4.14.137",
+    "@types/long": "^4.0.0",
+    "@types/mkdirp": "^0.5.2",
+    "@types/node": "^12.7.2",
+    "ts-node": "^8.3.0"
+  }
 }

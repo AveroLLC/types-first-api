@@ -1,10 +1,13 @@
-import { Observable, of, throwError, zip } from 'rxjs';
-import { delay, finalize, map, mergeMap } from 'rxjs/operators';
-import { Context } from './context';
-import { DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
-import { Service } from './service';
-import { pbjsService, TestService } from './testData';
-import { get } from 'lodash';
+import { Observable, of, throwError, zip } from "rxjs";
+import { delay, finalize, map, mergeMap } from "rxjs/operators";
+import { Context } from "./context";
+import { DEFAULT_SERVER_ERROR, IError, StatusCodes } from "./errors";
+import { Service } from "./service";
+import { pbjsService, TestService } from "./testData";
+import { get } from "lodash";
+
+import * as pbjs from 'protobufjs';
+
 
 interface Dependencies {
   usersSvc: {
@@ -13,7 +16,7 @@ interface Dependencies {
   };
 }
 
-describe('Service', () => {
+describe("Service", () => {
   let s: Service<TestService, Dependencies>;
   let context: Context;
   const usersSvc = {
@@ -22,19 +25,22 @@ describe('Service', () => {
   };
 
   beforeEach(() => {
-    s = new Service<TestService, Dependencies>(pbjsService, {
-      usersSvc,
-    });
+    s = new Service<TestService, Dependencies>(
+     pbjsService,
+      {
+        usersSvc
+      }
+    );
     context = Context.create({});
   });
 
-  describe('#call', () => {
-    ['throw', 'observable'].forEach(style => {
+  describe("#call", () => {
+    ["throw", "observable"].forEach(style => {
       let registerToThrow = (err: any) => {};
       beforeEach(() => {
         registerToThrow = err => {
-          s.registerServiceHandler('increment', () => {
-            if (style === 'throw') {
+          s.registerServiceHandler("increment", () => {
+            if (style === "throw") {
               throw err;
             } else {
               return throwError(err);
@@ -44,52 +50,54 @@ describe('Service', () => {
       });
 
       describe(`${style} error handling`, () => {
-        it('should default to a not implemented error', () => {
-          const call = s.call('increment', of({ val: 1, add: 2 }), context);
+        it("should default to a not implemented error", () => {
+          const call = s.call("increment", of({ val: 1, add: 2 }), context);
 
           return expect(call.toPromise()).rejects.toMatchObject({
-            code: StatusCodes.NotImplemented,
+            code: StatusCodes.NotImplemented
           });
         });
 
-        it('should create a basic structured error from random thrown objects', () => {
-          registerToThrow('OH LORDY');
+        it("should create a basic structured error from random thrown objects", () => {
+          registerToThrow("OH LORDY");
 
-          const call = s.call('increment', of({ val: 1, add: 2 }), context);
+          const call = s.call("increment", of({ val: 1, add: 2 }), context);
 
-          return expect(call.toPromise()).rejects.toMatchObject(DEFAULT_SERVER_ERROR);
+          return expect(call.toPromise()).rejects.toMatchObject(
+            DEFAULT_SERVER_ERROR
+          );
         });
 
-        it('should create a structured error from random thrown errors', () => {
-          registerToThrow(new Error('OH LORDY'));
+        it("should create a structured error from random thrown errors", () => {
+          registerToThrow(new Error("OH LORDY"));
 
-          const call = s.call('increment', of({ val: 1, add: 2 }), context);
+          const call = s.call("increment", of({ val: 1, add: 2 }), context);
 
           return expect(call.toPromise()).rejects.toMatchObject({
             code: StatusCodes.ServerError,
-            message: 'OH LORDY',
+            message: "OH LORDY"
           });
         });
 
-        it('should propagate thrown structured errors', () => {
+        it("should propagate thrown structured errors", () => {
           const err: IError = {
             code: StatusCodes.NotAuthenticated,
-            message: 'Who are you?',
-            stackTrace: 'A, B, C',
-            forwardedFor: [],
+            message: "Who are you?",
+            stackTrace: "A, B, C",
+            forwardedFor: []
           };
           registerToThrow(err);
 
-          const call = s.call('increment', of({ val: 1, add: 2 }), context);
+          const call = s.call("increment", of({ val: 1, add: 2 }), context);
 
           return expect(call.toPromise()).rejects.toBe(err);
         });
       });
     });
 
-    describe('handlers', () => {
-      it('should invoke the registered handler', () => {
-        s.registerServiceHandler('increment', (req, ctx) => {
+    describe("handlers", () => {
+      it("should invoke the registered handler", () => {
+        s.registerServiceHandler("increment", (req, ctx) => {
           return req.pipe(
             map(d => {
               return { val: d.val + d.add };
@@ -97,19 +105,19 @@ describe('Service', () => {
           );
         });
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
 
         return expect(response.toPromise()).resolves.toEqual({ val: 12 });
       });
 
-      it('should provide registered dependencies to the handler', () => {
+      it("should provide registered dependencies to the handler", () => {
         const handler = jest.fn((req, ctx, deps) => {
           return of({ val: 12 });
         });
 
-        s.registerServiceHandler('increment', handler);
+        s.registerServiceHandler("increment", handler);
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
 
         return response.toPromise().then(() => {
           expect(handler).toHaveBeenCalledTimes(1);
@@ -119,23 +127,31 @@ describe('Service', () => {
         });
       });
 
-      it('should register a map of service handlers', () => {
+      it("should register a map of service handlers", () => {
         const expectedIncrementResult = { val: 12 };
         const increment = jest.fn((req, ctx) => {
           return of(expectedIncrementResult);
         });
 
-        const expectedConcatResult = { val: 'Hello World' };
+        const expectedConcatResult = { val: "Hello World" };
         const concat = jest.fn((req, ctx) => {
           return of(expectedConcatResult);
         });
         s.registerServiceHandlers({
           increment: increment,
-          concat: concat,
+          concat: concat
         });
 
-        const incrementReq$ = s.call('increment', of({ val: 10, add: 2 }), context);
-        const concatReq$ = s.call('concat', of({ val: 'Hello ', add: 'World' }), context);
+        const incrementReq$ = s.call(
+          "increment",
+          of({ val: 10, add: 2 }),
+          context
+        );
+        const concatReq$ = s.call(
+          "concat",
+          of({ val: "Hello ", add: "World" }),
+          context
+        );
 
         return zip(incrementReq$, concatReq$)
           .toPromise()
@@ -147,25 +163,23 @@ describe('Service', () => {
           });
       });
 
-      it('should handle handlers that return Promises', () => {
+      it("should handle handlers that return Promises", () => {
         const handler = jest.fn(async (req, ctx, deps) => {
           return { val: 12 };
         });
 
-        s.registerServiceHandler('increment', handler);
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        s.registerServiceHandler("increment", handler);
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
 
         return response.toPromise().then(() => {
           expect(handler).toHaveBeenCalledTimes(1);
           const args = handler.mock.calls[0];
           expect(args[2]).toEqual({ usersSvc });
         });
-
-      })
-
+      });
     });
 
-    describe('middleware', () => {
+    describe("middleware", () => {
       const handler = jest.fn((req, ctx) => {
         return req.pipe(
           map((d: any) => {
@@ -176,31 +190,31 @@ describe('Service', () => {
 
       beforeEach(() => {
         handler.mockClear();
-        s.registerServiceHandler('increment', handler);
+        s.registerServiceHandler("increment", handler);
       });
 
-      it('should invoke middleware with requestDetails that includes the method object with correct name called', () => {
+      it("should invoke middleware with requestDetails that includes the method object with correct name called", () => {
         const middleware = jest.fn((req, ctx, deps, next, requestDetails) => {
           return next(req, ctx);
         });
         s.addMiddleware(middleware);
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
 
         return response.toPromise().then(() => {
           expect(middleware).toHaveBeenCalledTimes(1);
           const args = middleware.mock.calls[0];
-          expect(args[4].method.name).toEqual('increment');
+          expect(args[4].method.name).toEqual("increment");
         });
       });
 
-      it('invokes middleware with the registered dependencies', () => {
+      it("invokes middleware with the registered dependencies", () => {
         const middleware = jest.fn((req, ctx, deps, next, requestDetails) => {
           return next(req, ctx);
         });
         s.addMiddleware(middleware);
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
 
         return response.toPromise().then(() => {
           expect(middleware).toHaveBeenCalledTimes(1);
@@ -209,112 +223,111 @@ describe('Service', () => {
         });
       });
 
-
-      it('invokes handler with decorated dependencies', () => {
-
-        handler.mockClear()
-        s.registerServiceHandler('increment', (req, ctx, deps) => {
+      it("invokes handler with decorated dependencies", () => {
+        handler.mockClear();
+        s.registerServiceHandler("increment", (req, ctx, deps) => {
           return req.pipe(
             map((d: any) => {
-              deps.usersSvc.justTen()
-              return { val: d.val + d.add }
+              deps.usersSvc.justTen();
+              return { val: d.val + d.add };
             })
-          )
-        })
+          );
+        });
 
-        const decoratingProxy = jest.fn((call) => call())
+        const decoratingProxy = jest.fn(call => call());
         const middleware = jest.fn((req, ctx, deps, next, requestDetails) => {
-
           const userService = {
             ...deps.usersSvc,
             justTen: () => decoratingProxy(deps.usersSvc.justTen)
-          }
-          let nextDeps = {...deps, usersSvc: userService}
+          };
+          let nextDeps = { ...deps, usersSvc: userService };
 
-          return next(req, ctx, nextDeps)
-        })
-
-        s.addMiddleware(middleware)
-
-        const response = s.call('increment', of({ val: 10, add: 2 }), context)
-
-        return response.toPromise().then(() => {
-          expect(middleware).toHaveBeenCalledTimes(1)
-          expect(get(decoratingProxy.mock.results, '[0].value')).toEqual(10)
-        })
-      })
-
-      it('catches errors thrown in middleware', () => {
-        s.addMiddleware(() => {
-          throw new Error('OH LORDY!');
+          return next(req, ctx, nextDeps);
         });
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        s.addMiddleware(middleware);
 
-        return expect(response.toPromise()).rejects.toMatchObject({
-          message: 'OH LORDY!',
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
+
+        return response.toPromise().then(() => {
+          expect(middleware).toHaveBeenCalledTimes(1);
+          expect(get(decoratingProxy.mock.results, "[0].value")).toEqual(10);
         });
       });
 
-      it('returns the result from handler when there is registered middleware', () => {
+      it("catches errors thrown in middleware", () => {
+        s.addMiddleware(() => {
+          throw new Error("OH LORDY!");
+        });
+
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
+
+        return expect(response.toPromise()).rejects.toMatchObject({
+          message: "OH LORDY!"
+        });
+      });
+
+      it("returns the result from handler when there is registered middleware", () => {
         s.addMiddleware((req, ctx, deps, next) => {
           return next(req, ctx);
         });
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
 
         return expect(response.toPromise()).resolves.toEqual({ val: 12 });
       });
 
-      it('allows middleware to mutate context', () => {
+      it("allows middleware to mutate context", () => {
         s.addMiddleware((req, ctx, deps, next) => {
-          ctx.set('user', { username: 'hello', birthday: new Date() });
+          ctx.set("user", { username: "hello", birthday: new Date() });
           return next(req, ctx);
         });
 
-        s.registerServiceHandler('increment', (req$, ctx) => {
+        s.registerServiceHandler("increment", (req$, ctx) => {
           return of({
-            val: ctx.get('user').username.length,
+            val: ctx.get("user").username.length
           });
         });
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
 
         return expect(response.toPromise()).resolves.toEqual({ val: 5 });
       });
 
-      it('allows the middleware to execute async actions before invoking next', () => {
+      it("allows the middleware to execute async actions before invoking next", () => {
         s.addMiddleware((req, ctx, deps, next) => {
-          return deps.usersSvc.authenticate().pipe(mergeMap(() => next(req, ctx)));
+          return deps.usersSvc
+            .authenticate()
+            .pipe(mergeMap(() => next(req, ctx)));
         });
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
 
         return expect(response.toPromise()).resolves.toEqual({ val: 12 });
       });
 
-      it('allows the middleware to bail inside an async action', () => {
+      it("allows the middleware to bail inside an async action", () => {
         expect.assertions(2);
 
         s.addMiddleware((req, ctx, deps, next) => {
           return deps.usersSvc.authenticate().pipe(
             mergeMap(() => {
-              throw new Error('OH LORDY!');
+              throw new Error("OH LORDY!");
             })
           );
         });
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
 
         return response.toPromise().catch(err => {
           expect(err).toMatchObject({
-            message: 'OH LORDY!',
+            message: "OH LORDY!"
           });
           expect(handler).not.toHaveBeenCalled();
         });
       });
 
-      it('allows the middleware to execute actions after then handler completes', () => {
+      it("allows the middleware to execute actions after then handler completes", () => {
         expect.assertions(2);
 
         let t = 0;
@@ -330,7 +343,7 @@ describe('Service', () => {
           );
         });
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context);
+        const response = s.call("increment", of({ val: 10, add: 2 }), context);
 
         return response.toPromise().then(v => {
           expect(v).toEqual({ val: 12 });
@@ -340,9 +353,9 @@ describe('Service', () => {
     });
   });
 
-  describe('validation', () => {
+  describe("validation", () => {
     beforeEach(() => {
-      s.registerServiceHandler('increment', req$ => {
+      s.registerServiceHandler("increment", req$ => {
         return req$.pipe(
           map(req => {
             const { val, add } = req;
@@ -352,69 +365,69 @@ describe('Service', () => {
       });
     });
 
-    it('should return an error if a required field is not provided', async () => {
+    it("should return an error if a required field is not provided", async () => {
       const badReq = {} as any;
 
-      const res$ = s.call('increment', of(badReq), context);
+      const res$ = s.call("increment", of(badReq), context);
       await expect(res$.toPromise()).rejects.toMatchObject({
         code: StatusCodes.BadRequest,
-        message: 'val: integer expected',
+        message: "val: integer expected"
       });
     });
 
-    it('should return an error if a wrong type is provided', async () => {
-      const badReq = { val: 1, add: '2' } as any;
+    it("should return an error if a wrong type is provided", async () => {
+      const badReq = { val: 1, add: "2" } as any;
 
-      const res$ = s.call('increment', of(badReq), context);
+      const res$ = s.call("increment", of(badReq), context);
       await expect(res$.toPromise()).rejects.toMatchObject({
         code: StatusCodes.BadRequest,
-        message: 'add: integer expected',
+        message: "add: integer expected"
       });
     });
 
-    it('should not return an error if optional fields are not provided', async () => {
+    it("should not return an error if optional fields are not provided", async () => {
       const badReq = { val: 1 } as any;
 
-      const res$ = s.call('increment', of(badReq), context);
+      const res$ = s.call("increment", of(badReq), context);
       await expect(res$.toPromise()).resolves.toEqual({
-        val: 6,
+        val: 6
       });
     });
 
-    it('should strip additional properties', async () => {
+    it("should strip additional properties", async () => {
       expect.assertions(1);
 
       const badReq = { val: 1, add: 2, extra: 3 } as any;
 
-      s.registerServiceHandler('increment', req$ => {
+      s.registerServiceHandler("increment", req$ => {
         return req$.pipe(
           map(req => {
-            expect(req).not.toHaveProperty('extra');
+            expect(req).not.toHaveProperty("extra");
             const { val, add } = req;
             return { val: val + (add == null ? 5 : add) };
           })
         );
       });
 
-      const res$ = s.call('increment', of(badReq), context);
+      const res$ = s.call("increment", of(badReq), context);
       await res$.toPromise();
     });
 
-    it('should format response objects', () => {
-      s.registerServiceHandler('increment', () => {
-        return of({ what: 'is this?' }) as any;
+    it("should format response objects", () => {
+      s.registerServiceHandler("increment", () => {
+        return of({ what: "is this?" }) as any;
       });
 
-      const res$ = s.call('increment', of({ val: 1 }), context);
+      const res$ = s.call("increment", of({ val: 1 }), context);
 
       return expect(res$.toPromise()).resolves.toEqual({
-        val: 0,
+        val: 0
       });
     });
   });
 
-  describe('cancelation', () => {
-    it('skips the stack if context is already canceled', async () => {
+  describe("cancelation", () => {
+    it("skips the stack if context is already canceled", async () => {
       const middleware = jest.fn((req, ctx, deps, next, requestDetails) => {
         return next(req, ctx);
       });
@@ -422,13 +435,13 @@ describe('Service', () => {
       const handler = jest.fn((req, ctx) => {
         return of({ val: 12 });
       });
-      s.registerServiceHandler('increment', handler);
+      s.registerServiceHandler("increment", handler);
 
       context.cancel();
-      const res$ = s.call('increment', of({ val: 10, add: 2 }), context);
+      const res$ = s.call("increment", of({ val: 10, add: 2 }), context);
 
       await expect(res$.toPromise()).rejects.toMatchObject({
-        code: StatusCodes.Cancelled,
+        code: StatusCodes.Cancelled
       });
 
       expect(middleware).not.toHaveBeenCalled();

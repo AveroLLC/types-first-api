@@ -1,6 +1,5 @@
-import { createError, IError, StatusCodes } from '@types-first-api/core';
+import { StatusCodes } from '@types-first-api/core';
 import * as grpc from 'grpc';
-import * as _ from 'lodash';
 
 export const ERROR_CODES_TO_GRPC_STATUS: Record<StatusCodes, grpc.status> = {
   [StatusCodes.Ok]: grpc.status.OK,
@@ -19,7 +18,7 @@ export const ERROR_CODES_TO_GRPC_STATUS: Record<StatusCodes, grpc.status> = {
   [StatusCodes.NotAuthenticated]: grpc.status.UNAUTHENTICATED,
 };
 
-const GRPC_STATUS_TO_ERROR_CODES: Record<grpc.status, StatusCodes> = {
+export const GRPC_STATUS_TO_ERROR_CODES: Record<grpc.status, StatusCodes> = {
   [grpc.status.OK]: StatusCodes.Ok,
   [grpc.status.CANCELLED]: StatusCodes.Cancelled,
   [grpc.status.UNKNOWN]: StatusCodes.NetworkError,
@@ -38,26 +37,3 @@ const GRPC_STATUS_TO_ERROR_CODES: Record<grpc.status, StatusCodes> = {
   [grpc.status.DATA_LOSS]: StatusCodes.NetworkError,
   [grpc.status.UNAUTHENTICATED]: StatusCodes.NotAuthenticated,
 };
-
-function isGrpcStatus(s: any): s is grpc.StatusObject {
-  return (
-    _.includes(grpc.status, s.code) &&
-    s.metadata != null &&
-    s.metadata._internal_repr != null
-  );
-}
-
-export function normalizeGrpcError(err, defaultError: IError): IError {
-  if (isGrpcStatus(err)) {
-    const code = GRPC_STATUS_TO_ERROR_CODES[err.code] || defaultError.code;
-
-    const error: IError = {
-      code,
-      message: err.details || defaultError.message,
-      forwardedFor: [],
-    };
-    err = error;
-  }
-
-  return createError(err, defaultError);
-}
