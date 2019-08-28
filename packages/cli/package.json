@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/cli",
-  "version": "1.0.1-alpha.0",
+  "version": "1.0.2-alpha.0",
   "description": "Types-First API CLI tool",
   "publishConfig": {
     "access": "public"
@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.5.1",
-    "@types-first-api/core": "^1.0.1-alpha.0",
+    "@types-first-api/core": "^1.0.2-alpha.0",
     "commander": "^2.19.0",
     "mkdirp": "^0.5.1",
     "typescript": "^3.5.3"
