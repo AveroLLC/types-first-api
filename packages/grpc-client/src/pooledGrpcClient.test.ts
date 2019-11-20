@@ -327,9 +327,7 @@ it("has a max metadata size of 65kb", async () => {
   const smallContextResponse = await client.rpc
     .Context({}, smallContext)
     .toPromise();
-  await expect(smallContextResponse.metadata).toMatchObject(
-    smallContext.metadata
-  );
+  expect(smallContextResponse.metadata).toMatchObject(smallContext.metadata);
 
   const bigContext = Context.create({
     metadata: {
@@ -339,7 +337,7 @@ it("has a max metadata size of 65kb", async () => {
   const bigContextResponse = client.rpc.Context({}, bigContext).toPromise();
 
   await expect(bigContextResponse).rejects.toMatchObject({
-    code: 'Unavailable',
-    message: DEFAULT_CLIENT_ERROR.message
+    code: "Unavailable",
+    message: "Stream refused by server"
   });
 });

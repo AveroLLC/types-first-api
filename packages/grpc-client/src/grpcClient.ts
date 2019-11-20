@@ -10,12 +10,11 @@ import {
   Response,
   ClientOptions
 } from "@types-first-api/core";
-
 import { EMPTY, Subject } from "rxjs";
 import { catchError } from "rxjs/operators";
 import { ServiceDefinition, MethodDefinition } from "@grpc/proto-loader";
 import * as grpc from "@grpc/grpc-js";
-import {normalizeGrpcError} from "./clientErrors";
+import { normalizeGrpcError } from "./clientErrors";
 
 export interface GrpcClientOptions {
   grpcClient?: Record<string, string | number>;

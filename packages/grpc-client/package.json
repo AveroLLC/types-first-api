@@ -11,13 +11,13 @@
     "dest"
   ],
   "scripts": {
-    "test": "jest",
+    "test": "../../node_modules/jest/bin/jest.js",
     "prepare": "tsc",
     "generate": "tfapi -o generated protos/Test.proto"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^0.5.2",
-    "@grpc/proto-loader": "^0.5.1",
+    "@grpc/grpc-js": "^0.6.12",
+    "@grpc/proto-loader": "^0.5.3",
     "@types-first-api/core": "^1.0.2-alpha.0",
     "@types-first-api/grpc-common": "^1.0.2-alpha.0"
   },
@@ -43,7 +43,8 @@
       "jsx",
       "json",
       "node"
-    ]
+    ],
+    "testEnvironment": "node"
   },
   "gitHead": "d5c838e99c488314d013e9c73d69d2209bd9fc36"
 }
