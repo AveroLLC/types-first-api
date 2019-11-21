@@ -10,6 +10,7 @@ service GreeterService {
   rpc AsyncHello (AsyncHelloRequest) returns (HelloReply) {}
   rpc Context (ContextRequest) returns (ContextResponse) {}
   rpc DefaultValues (DefaultValuesRequest) returns (DefaultValuesRequest) {};
+  rpc EnumEncoding (EnumEncodingRequest) returns (EnumEncodingResponse) {};
 }
 
 // The request message containing the user's name
@@ -40,4 +41,18 @@ message DefaultValuesRequest {
   repeated int32 numberArray = 4;
   HelloReply messageValue = 5;
   repeated HelloReply messageArray = 6;
+}
+
+message EnumEncodingRequest {}
+
+message EnumEncodingResponse {
+  enum Colors {
+    RED = 1;
+    ORANGE = 2;
+    YELLOW = 3;
+    GREEN = 4;
+    BLUE = 5;
+    PURPLE = 6;
+  }
+  repeated Colors colors = 1;
 }

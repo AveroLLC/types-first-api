@@ -39,7 +39,7 @@ function initializeClientAndServer(
   const serviceDefinitionsIdentifier = ts.createIdentifier('Services');
   const jsonDescriptorIdentifier = ts.createIdentifier('jsonDescriptor');
   const rootIdentifier = ts.createIdentifier('root');
-  const getPackageDefinitionIdentifier = ts.createIdentifier('getPackageDefinition');
+  const packageDefinitionIdentifier = ts.createIdentifier('packageDefinition');
 
   return [
     ts.createInterfaceDeclaration(
@@ -100,33 +100,15 @@ function initializeClientAndServer(
       ts.createVariableDeclarationList(
         [
           ts.createVariableDeclaration(
-            getPackageDefinitionIdentifier,
+            packageDefinitionIdentifier,
             undefined,
-            ts.createArrowFunction(
-              undefined,
-              undefined,
-              [
-                ts.createParameter(
-                  undefined,
-                  undefined,
-                  undefined,
-                  ts.createIdentifier('options'),
-                  undefined,
-                  ts.createTypeReferenceNode(ts.createIdentifier('Options'), undefined),
-                  undefined
-                ),
-              ],
-              undefined,
-              ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-              ts.createCall(ts.createIdentifier('loadSync'), undefined, [
-                ts.createCall(
-                  ts.createPropertyAccess(ts.createIdentifier('path'), 'resolve'),
-                  [],
-                  [ts.createIdentifier('__dirname'), ts.createLiteral(relativeProtoPath)]
-                ),
-                ts.createIdentifier('options'),
-              ])
-            )
+            ts.createCall(ts.createIdentifier('loadSync'), undefined, [
+              ts.createCall(
+                ts.createPropertyAccess(ts.createIdentifier('path'), 'resolve'),
+                [],
+                [ts.createIdentifier('__dirname'), ts.createLiteral(relativeProtoPath)]
+              ),
+            ])
           ),
         ],
         ts.NodeFlags.Const
@@ -142,7 +124,7 @@ function initializeClientAndServer(
             ts.createCall(
               ts.createPropertyAccess(ts.createIdentifier('tfapi'), 'clientFactory'),
               [ts.createTypeReferenceNode(serviceDefinitionsIdentifier, [])],
-              [getPackageDefinitionIdentifier]
+              [packageDefinitionIdentifier]
             )
           ),
         ],
@@ -196,7 +178,6 @@ function buildSourceFile(statements: ts.Statement[]) {
         undefined,
         ts.createNamedImports([
           ts.createImportSpecifier(undefined, ts.createIdentifier('loadSync')),
-          ts.createImportSpecifier(undefined, ts.createIdentifier('Options')),
         ])
       ),
       ts.createLiteral('@grpc/proto-loader')
