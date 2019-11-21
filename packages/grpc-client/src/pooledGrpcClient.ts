@@ -4,17 +4,19 @@ import {
   Context,
   GRPCService,
   IError,
-  StatusCodes
-} from "@types-first-api/core";
-import { Observable } from "rxjs";
-import { GrpcClient, GrpcClientOptions } from "./grpcClient";
-import { catchError } from "rxjs/operators";
-import { ServiceDefinition } from "@grpc/proto-loader";
+  StatusCodes,
+} from '@types-first-api/core';
+import { Observable } from 'rxjs';
+import { GrpcClient, GrpcClientOptions, GRPC_DEADLINE } from './grpcClient';
+import { catchError } from 'rxjs/operators';
+import { ServiceDefinition } from '@grpc/proto-loader';
+import { v4 } from 'uuid';
 
 interface PoolEntry<TService extends GRPCService<TService>> {
   initTime: number;
   client: GrpcClient<TService>;
   index: number;
+  id: string;
 }
 
 export type PooledGrpcClientOptions = GrpcClientOptions & {
@@ -32,12 +34,12 @@ export type PooledGrpcClientOptions = GrpcClientOptions & {
 
  */
 
-export class PooledGrpcClient<
-  TService extends GRPCService<TService>
-> extends Client<TService> {
+export class PooledGrpcClient<TService extends GRPCService<TService>> extends Client<
+  TService
+> {
   // The maximum time for a GrpcClient to be used by the application
-  private readonly MAX_CLIENT_LIFE_MS;
-  private readonly CONNECTION_POOL_SIZE;
+  private readonly MAX_CLIENT_LIFE_MS: number;
+  private readonly CONNECTION_POOL_SIZE: number;
 
   private readonly _clientPool: PoolEntry<TService>[] = [];
 
@@ -53,30 +55,33 @@ export class PooledGrpcClient<
   ) {
     super(serviceName, serviceDefinition, address, options.client || {});
     this.grpcOptions = options;
-    this.CONNECTION_POOL_SIZE =
-      (options.pool && options.pool.connectionPoolSize) || 12;
-    this.MAX_CLIENT_LIFE_MS =
-      (options.pool && options.pool.maxClientLifeMs) || 30e3;
-    for(let i = 0; i < this.CONNECTION_POOL_SIZE; ++i) {
+    this.CONNECTION_POOL_SIZE = (options.pool && options.pool.connectionPoolSize) || 12;
+    this.MAX_CLIENT_LIFE_MS = (options.pool && options.pool.maxClientLifeMs) || 30e3;
+    for (let i = 0; i < this.CONNECTION_POOL_SIZE; ++i) {
       this._clientPool.push(this.createPoolEntry(i));
     }
   }
 
   _call<K extends keyof TService>(
     methodName: K,
-    req$: Observable<TService[K]["request"]>,
+    req$: Observable<TService[K]['request']>,
     ctx: Context
-  ): Observable<TService[K]["response"]> {
+  ): Observable<TService[K]['response']> {
     const nextPoolEntry = this.getNextClient();
     return nextPoolEntry.client._call(methodName, req$, ctx).pipe(
       catchError((err: IError) => {
         // grpc status UNAVAILABLE is returned from a bad channel connection
-        if (err.code === StatusCodes.Unavailable) {
-          return this.replaceClient(nextPoolEntry.index).client._call(
-            methodName,
-            req$,
-            ctx
-          );
+        console.log(err.code);
+        if (
+          err.code === StatusCodes.Unavailable ||
+          err.code === StatusCodes.NetworkError ||
+          err.code === StatusCodes.Cancelled
+        ) {
+          const nextClient =
+            nextPoolEntry.id === this._clientPool[nextPoolEntry.index].id
+              ? this.replaceClient(nextPoolEntry.index).client
+              : this._clientPool[nextPoolEntry.index].client;
+          return nextClient._call(methodName, req$, ctx);
         }
         throw err;
       })
@@ -86,6 +91,7 @@ export class PooledGrpcClient<
   private replaceClient = (index: number): PoolEntry<TService> => {
     const entry = this._clientPool[index];
     this._clientPool[index] = this.createPoolEntry(index);
+
     entry.client.getClient().close();
 
     return this._clientPool[index];
@@ -99,7 +105,7 @@ export class PooledGrpcClient<
 
     // check if we need to refresh the channel
     if (nextEntry.initTime + this.MAX_CLIENT_LIFE_MS < Date.now()) {
-      console.log('closing client', nextEntry.index)
+      console.log('closing client', nextEntry.index);
       return this.replaceClient(index);
     }
 
@@ -115,7 +121,8 @@ export class PooledGrpcClient<
         this.grpcOptions
       ),
       initTime: Date.now(),
-      index
+      index,
+      id: v4(),
     };
   };
 }

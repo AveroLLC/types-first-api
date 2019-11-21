@@ -3,6 +3,7 @@ syntax = "proto3";
 service TestService {
   rpc increment(IncrementRequest) returns (IncrementResponse);
   rpc concat(ConcatRequest) returns (ConcatResponse);
+  rpc wrapped(WrappedMessage) returns (WrappedMessage);
 }
 
 message IncrementRequest {
@@ -21,4 +22,13 @@ message ConcatRequest {
 
 message ConcatResponse {
   required string val = 1;
+}
+
+message WrappedMessage {
+  repeated string stringArray = 1;
+  message WrappedString {
+    string value = 1;
+  }
+
+  WrappedString wrappedString = 2;
 }

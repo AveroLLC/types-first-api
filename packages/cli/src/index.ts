@@ -17,7 +17,7 @@ if (program.args.length === 0) {
 
 const files = program.args;
 const outputDir = path.resolve(process.cwd(), program.output || 'generated');
-console.log(outputDir);
+
 mkdirp(outputDir, () => {});
 
 files.forEach(fileName => {
@@ -25,6 +25,6 @@ files.forEach(fileName => {
   const basename = path.basename(fileName, '.proto');
   const outputFilePath = path.resolve(process.cwd(), outputDir, `${basename}.ts`);
 
-  const generated = generate(inputFilePath);
+  const generated = generate(inputFilePath, outputFilePath);
   fs.writeFileSync(outputFilePath, generated);
 });

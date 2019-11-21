@@ -9,6 +9,7 @@ service GreeterService {
   rpc ConditionallyUnavailableHello (HelloRequest) returns (HelloReply) {}
   rpc AsyncHello (AsyncHelloRequest) returns (HelloReply) {}
   rpc Context (ContextRequest) returns (ContextResponse) {}
+  rpc DefaultValues (DefaultValuesRequest) returns (DefaultValuesRequest) {};
 }
 
 // The request message containing the user's name
@@ -30,4 +31,13 @@ message AsyncHelloRequest {
 // A response message containing a greeting
 message HelloReply {
   string message = 1;
+}
+
+message DefaultValuesRequest {
+  string stringValue = 1;
+  repeated string stringArray = 2;
+  int32 numberValue = 3;
+  repeated int32 numberArray = 4;
+  HelloReply messageValue = 5;
+  repeated HelloReply messageArray = 6;
 }

@@ -6,7 +6,7 @@
     "allowSyntheticDefaultImports": false,
     "declaration": true,
     "outDir": "dest",
-    "strictNullChecks": true
+    "strict":  true
   },
   "files": ["src/index.ts"],
   "exclude": ["node_modules"]
