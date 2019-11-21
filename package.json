@@ -9,7 +9,7 @@
     "protobufjs": "^6.8.8",
     "rxjs": "^6.3.3",
     "ts-jest": "^24.0.2",
-    "typescript": "^3.5.3"
+    "typescript": "^3.7.2"
   },
   "scripts": {
     "test": "jest"

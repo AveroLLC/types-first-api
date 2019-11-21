@@ -16,7 +16,7 @@
   },
   "author": "",
   "license": "Apache-2.0",
-  "gitHead": "c30d1b712c752b4636f0baa87c7f9356f7a81704",
+  "gitHead": "ee94bf5d3e8604fdc303e297b6302bbfdc6aa941",
   "dependencies": {
     "@grpc/grpc-js": "^0.5.2",
     "@grpc/proto-loader": "^0.5.1",
@@ -26,5 +26,8 @@
   },
   "peerDependencies": {
     "rxjs": "^6.3.3"
+  },
+  "devDependencies": {
+    "typescript": "^3.7.2"
   }
 }
