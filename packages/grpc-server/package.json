@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/grpc-server",
-  "version": "1.0.2-alpha.0",
+  "version": "1.0.2-alpha.1",
   "description": "Types-First API GRPC server",
   "publishConfig": {
     "access": "public"
@@ -17,8 +17,8 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@types-first-api/core": "^1.0.2-alpha.0",
-    "@types-first-api/grpc-common": "^1.0.2-alpha.0",
+    "@types-first-api/core": "^1.0.2-alpha.1",
+    "@types-first-api/grpc-common": "^1.0.2-alpha.1",
     "grpc": "^1.15.1",
     "lodash": "^4.17.10"
   },

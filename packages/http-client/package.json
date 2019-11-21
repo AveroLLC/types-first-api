@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/http-client",
-  "version": "1.0.2-alpha.0",
+  "version": "1.0.2-alpha.1",
   "description": "Types-First API HTTP client",
   "publishConfig": {
     "access": "public"
@@ -20,8 +20,8 @@
   "dependencies": {
     "@grpc/grpc-js": "^0.5.2",
     "@grpc/proto-loader": "^0.5.1",
-    "@types-first-api/core": "^1.0.2-alpha.0",
-    "@types-first-api/http-common": "^1.0.2-alpha.0",
+    "@types-first-api/core": "^1.0.2-alpha.1",
+    "@types-first-api/http-common": "^1.0.2-alpha.1",
     "axios": "^0.18.0"
   },
   "peerDependencies": {

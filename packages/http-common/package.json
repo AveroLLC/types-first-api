@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/http-common",
-  "version": "1.0.2-alpha.0",
+  "version": "1.0.2-alpha.1",
   "description": "Types-First API HTTP common code",
   "publishConfig": {
     "access": "public"
@@ -15,7 +15,7 @@
     "prepare": "tsc"
   },
   "dependencies": {
-    "@types-first-api/core": "^1.0.2-alpha.0",
+    "@types-first-api/core": "^1.0.2-alpha.1",
     "lodash": "^4.17.11"
   },
   "author": "",
