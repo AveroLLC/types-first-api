@@ -18,7 +18,7 @@
     "tfapi": "dest/index.js"
   },
   "dependencies": {
-    "@types-first-api/core": "/Users/mgroves/Documents/bitbucket/types-first-api/packages/core/types-first-api-core-1.0.2-alpha.0.tgz",
+    "@types-first-api/core": "1.0.2-alpha.5",
     "commander": "^2.19.0",
     "mkdirp": "^0.5.1"
   },
