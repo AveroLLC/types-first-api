@@ -303,6 +303,7 @@ it('has a max metadata size of 65kb', async () => {
     },
   });
   const smallContextResponse = await client.rpc.Context({}, smallContext).toPromise();
+  smallContextResponse;
   expect(smallContextResponse.metadata).toMatchObject(smallContext.metadata);
 
   const bigContext = Context.create({

@@ -40,7 +40,7 @@ it('tries a call once when given an unavailable response', async () => {
   const server = GrpcServer.createWithOptions({}, service);
   await server.bind(address);
 
-  const client = clients.create(serviceName, address, GrpcClient);
+  const client = clients.create({ serviceName, address, ClientImpl: GrpcClient });
 
   const call = client.rpc.UnavailableHello({}).toPromise();
 

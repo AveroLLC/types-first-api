@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.5.1",
-    "@types-first-api/core": "^1.0.2-alpha.0",
+    "@types-first-api/core": "/Users/mgroves/Documents/bitbucket/types-first-api/packages/core/types-first-api-core-1.0.2-alpha.0.tgz",
     "commander": "^2.19.0",
     "mkdirp": "^0.5.1",
     "typescript": "^3.5.3"

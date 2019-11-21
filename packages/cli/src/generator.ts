@@ -39,7 +39,7 @@ function initializeClientAndServer(
   const serviceDefinitionsIdentifier = ts.createIdentifier('Services');
   const jsonDescriptorIdentifier = ts.createIdentifier('jsonDescriptor');
   const rootIdentifier = ts.createIdentifier('root');
-  const packageDefinitionIdentifier = ts.createIdentifier('packageDefinition');
+  const getPackageDefinitionIdentifier = ts.createIdentifier('getPackageDefinition');
 
   return [
     ts.createInterfaceDeclaration(
@@ -100,18 +100,32 @@ function initializeClientAndServer(
       ts.createVariableDeclarationList(
         [
           ts.createVariableDeclaration(
-            packageDefinitionIdentifier,
+            getPackageDefinitionIdentifier,
             undefined,
-            ts.createCall(
-              ts.createIdentifier('loadSync'),
-              [],
+            ts.createArrowFunction(
+              undefined,
+              undefined,
               [
+                ts.createParameter(
+                  undefined,
+                  undefined,
+                  undefined,
+                  ts.createIdentifier('options'),
+                  undefined,
+                  ts.createTypeReferenceNode(ts.createIdentifier('Options'), undefined),
+                  undefined
+                ),
+              ],
+              undefined,
+              ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+              ts.createCall(ts.createIdentifier('loadSync'), undefined, [
                 ts.createCall(
                   ts.createPropertyAccess(ts.createIdentifier('path'), 'resolve'),
                   [],
                   [ts.createIdentifier('__dirname'), ts.createLiteral(relativeProtoPath)]
                 ),
-              ]
+                ts.createIdentifier('options'),
+              ])
             )
           ),
         ],
@@ -128,7 +142,7 @@ function initializeClientAndServer(
             ts.createCall(
               ts.createPropertyAccess(ts.createIdentifier('tfapi'), 'clientFactory'),
               [ts.createTypeReferenceNode(serviceDefinitionsIdentifier, [])],
-              [packageDefinitionIdentifier]
+              [getPackageDefinitionIdentifier]
             )
           ),
         ],
@@ -182,6 +196,7 @@ function buildSourceFile(statements: ts.Statement[]) {
         undefined,
         ts.createNamedImports([
           ts.createImportSpecifier(undefined, ts.createIdentifier('loadSync')),
+          ts.createImportSpecifier(undefined, ts.createIdentifier('Options')),
         ])
       ),
       ts.createLiteral('@grpc/proto-loader')
