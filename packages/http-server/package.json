@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/http-server",
-  "version": "1.0.2-alpha.4",
+  "version": "1.0.2-alpha.5",
   "description": "Types-First API Http Server implementation",
   "publishConfig": {
     "access": "public"
@@ -15,13 +15,13 @@
     "prepare": "tsc"
   },
   "dependencies": {
-    "@types-first-api/core": "^1.0.2-alpha.4",
-    "@types-first-api/http-common": "^1.0.2-alpha.4",
+    "@types-first-api/core": "^1.0.2-alpha.5",
+    "@types-first-api/http-common": "^1.0.2-alpha.5",
     "express": "^4.16.3",
     "lodash": "^4.17.10",
     "protobufjs": "^6.8.8"
-  }, 
-  "peerDependencies" :{
+  },
+  "peerDependencies": {
     "rxjs": "^6.3.3"
   },
   "author": "",

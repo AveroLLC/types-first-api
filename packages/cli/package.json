@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/cli",
-  "version": "1.0.2-alpha.4",
+  "version": "1.0.2-alpha.5",
   "description": "Types-First API CLI tool",
   "publishConfig": {
     "access": "public"
@@ -24,7 +24,7 @@
   },
   "peerDependencies": {
     "protobufjs": "^6.8.8",
-     "rxjs": "^6.3.3"
+    "rxjs": "^6.3.3"
   },
   "author": "",
   "license": "Apache-2.0",
