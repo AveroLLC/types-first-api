@@ -23,12 +23,12 @@ export type GRPCServiceMap<TServices> = {
 };
 
 export type ClientRequest<TReq> = Observable<DeepPartial<TReq>> | DeepPartial<TReq>;
-export type ClientResponse<TReq> = Observable<TReq>;
+export type ClientResponse<TRes> = Observable<TRes>;
 
 export type ServerRequest<TReq> = Observable<TReq>;
-export type ServerResponse<TReq> =
-  | Observable<DeepPartial<TReq>>
-  | Promise<DeepPartial<TReq>>;
+export type ServerResponse<TRes> =
+  | Observable<DeepPartial<TRes>>
+  | Promise<DeepPartial<TRes>>;
 
 // DEPRECATED
 export type Request<TReq> = Observable<TReq>;

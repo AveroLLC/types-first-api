@@ -6,8 +6,9 @@
     "allowSyntheticDefaultImports": false,
     "declaration": true,
     "outDir": "dest",
-    "strict":  true
+    "strict":  true,
+    "rootDir": "src",
+    "skipDefaultLibCheck": true
   },
-  "files": ["src/index.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [ "src/**/*.test.ts", "generated", "dest"]
 }

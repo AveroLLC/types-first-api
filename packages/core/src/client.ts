@@ -10,7 +10,7 @@ import { MethodDefinition, ServiceDefinition } from '@grpc/proto-loader';
 export type RpcCall<TReq, TRes> = (
   req: ClientRequest<TReq>,
   ctx?: Context
-) => ClientResponse<TReq>;
+) => ClientResponse<TRes>;
 
 export type RpcCallMap<TService extends GRPCService<TService>> = {
   [K in keyof TService]: RpcCall<TService[K]['request'], TService[K]['response']>;
