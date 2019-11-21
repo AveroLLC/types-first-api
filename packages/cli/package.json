@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/cli",
-  "version": "1.0.2-alpha.3",
+  "version": "1.0.2-alpha.4",
   "description": "Types-First API CLI tool",
   "publishConfig": {
     "access": "public"
