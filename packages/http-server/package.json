@@ -19,15 +19,16 @@
     "@types-first-api/http-common": "^1.0.2-alpha.4",
     "express": "^4.16.3",
     "lodash": "^4.17.10",
-    "protobufjs": "^6.8.8",
+    "protobufjs": "^6.8.8"
+  }, 
+  "peerDependencies" :{
     "rxjs": "^6.3.3"
   },
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/express": "^4.16.0",
-    "@types/lodash": "^4.14.116",
-    "typescript": "^3.7.2"
+    "@types/lodash": "^4.14.116"
   },
-  "gitHead": "ee94bf5d3e8604fdc303e297b6302bbfdc6aa941"
+  "gitHead": "3fb676b641df8b464936dd1c395c9a12290b1f89"
 }

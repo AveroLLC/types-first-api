@@ -1,13 +1,13 @@
 {
   "devDependencies": {
     "@types/jest": "^24.0.18",
-    "@types/node": "^10.9.4",
+    "@types/node": "^9.6.55",
     "@types/protobufjs": "^6.0.0",
     "jest": "^24.9.0",
     "lerna": "^3.2.1",
     "prettier": "^1.18.2",
     "protobufjs": "^6.8.8",
-    "rxjs": "^6.3.3",
+    "rxjs": "^6.5.3",
     "ts-jest": "^24.0.2",
     "typescript": "^3.7.2"
   },
@@ -28,5 +28,9 @@
       "json",
       "node"
     ]
+  },
+  "dependencies": {
+    "@grpc/proto-loader": "^0.5.3",
+    "grpc": "^1.24.2"
   }
 }
