@@ -1,0 +1,5 @@
+62 error Error: Command failed: git tag v1.0.2-alpha.1 -m v1.0.2-alpha.1
+62 error fatal: tag 'v1.0.2-alpha.1' already exists
+62 error
+62 error     at makeError (/Users/mgroves/Documents/bitbucket/types-first-api/node_modules/@lerna/child-process/node_modules/execa/index.js:174:9)
+62 error     at /Users/mgroves/Documents/bitbucket/types-first-api/node_modules/@lerna/child-process/node_modules/execa/index.js:278:16

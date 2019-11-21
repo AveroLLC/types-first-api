@@ -30,7 +30,7 @@
   },
   "author": "",
   "license": "Apache-2.0",
-  "gitHead": "d5c838e99c488314d013e9c73d69d2209bd9fc36",
+  "gitHead": "c30d1b712c752b4636f0baa87c7f9356f7a81704",
   "devDependencies": {
     "@types/lodash": "^4.14.137",
     "@types/long": "^4.0.0",
