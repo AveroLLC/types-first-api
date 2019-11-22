@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/cli",
-  "version": "1.0.2-alpha.6",
+  "version": "1.0.2-alpha.7",
   "description": "Types-First API CLI tool",
   "publishConfig": {
     "access": "public"
@@ -18,7 +18,7 @@
     "tfapi": "dest/index.js"
   },
   "dependencies": {
-    "@types-first-api/core": "1.0.2-alpha.5",
+    "@types-first-api/core": "^1.0.2-alpha.7",
     "commander": "^2.19.0",
     "mkdirp": "^0.5.1"
   },
