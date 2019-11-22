@@ -20,13 +20,14 @@
   "dependencies": {
     "@types-first-api/core": "^1.0.2-alpha.7",
     "@types-first-api/grpc-common": "^1.0.2-alpha.7",
-    "lodash": "^4.17.10"
+    "lodash": "^4.17.10",
+    "protobufjs": "^6.8.8",
+    "rxjs": "^6.5.3",
+    "grpc": "^1.24.2"
   },
   "devDependencies": {
-    "@types-first-api/cli": "^1.0.2-alpha.8"
-  },
-  "peerDependencies": {
-    "rxjs": "^6.3.3"
+    "@types-first-api/cli": "^1.0.2-alpha.8",
+    "@grpc/proto-loader": "^0.5.3"
   },
   "jest": {
     "transform": {

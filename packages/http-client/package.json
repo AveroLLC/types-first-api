@@ -22,9 +22,7 @@
     "@grpc/proto-loader": "^0.5.1",
     "@types-first-api/core": "^1.0.2-alpha.7",
     "@types-first-api/http-common": "^1.0.2-alpha.7",
-    "axios": "^0.18.0"
-  },
-  "peerDependencies": {
-    "rxjs": "^6.3.3"
+    "axios": "^0.18.0",
+    "rxjs": "^6.5.3"
   }
 }

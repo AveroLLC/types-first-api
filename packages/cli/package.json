@@ -20,11 +20,10 @@
   "dependencies": {
     "@types-first-api/core": "^1.0.2-alpha.7",
     "commander": "^2.19.0",
-    "mkdirp": "^0.5.1"
-  },
-  "peerDependencies": {
+    "mkdirp": "^0.5.1",
     "protobufjs": "^6.8.8",
-    "rxjs": "^6.3.3"
+    "rxjs": "^6.5.3",
+    "@grpc/proto-loader": "^0.5.3"
   },
   "author": "",
   "license": "Apache-2.0",

@@ -19,10 +19,8 @@
     "@types-first-api/http-common": "^1.0.2-alpha.7",
     "express": "^4.16.3",
     "lodash": "^4.17.10",
-    "protobufjs": "^6.8.8"
-  },
-  "peerDependencies": {
-    "rxjs": "^6.3.3"
+    "protobufjs": "^6.8.8",
+    "rxjs": "^6.5.3"
   },
   "author": "",
   "license": "Apache-2.0",

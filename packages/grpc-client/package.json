@@ -20,18 +20,16 @@
     "@grpc/proto-loader": "^0.5.3",
     "@types-first-api/core": "^1.0.2-alpha.7",
     "@types-first-api/grpc-common": "^1.0.2-alpha.7",
-    "uuid": "^3.3.3"
-  },
-  "peerDependencies": {
-    "rxjs": "^6.3.3"
+    "uuid": "^3.3.3",
+    "protobufjs": "^6.8.8",
+    "rxjs": "^6.5.3"
   },
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types-first-api/cli": "^1.0.2-alpha.8",
     "@types-first-api/grpc-server": "^1.0.2-alpha.8",
-    "@types/uuid": "^3.4.6",
-    "protobufjs": "^6.8.8"
+    "@types/uuid": "^3.4.6"
   },
   "jest": {
     "transform": {
