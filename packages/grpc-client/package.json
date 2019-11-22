@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/grpc-client",
-  "version": "1.0.2-alpha.7",
+  "version": "1.0.2-alpha.8",
   "description": "Types-First API HTTP client",
   "publishConfig": {
     "access": "public"
@@ -28,8 +28,8 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types-first-api/cli": "^1.0.2-alpha.7",
-    "@types-first-api/grpc-server": "^1.0.2-alpha.7",
+    "@types-first-api/cli": "^1.0.2-alpha.8",
+    "@types-first-api/grpc-server": "^1.0.2-alpha.8",
     "@types/uuid": "^3.4.6",
     "protobufjs": "^6.8.8"
   },
