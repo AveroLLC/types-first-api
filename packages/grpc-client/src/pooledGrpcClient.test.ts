@@ -118,7 +118,7 @@ service.registerServiceHandler(
 );
 service.registerServiceHandler('Context', contextHandler);
 service.registerServiceHandler('AsyncHello', asyncHello);
-let server: GrpcServer;
+let server: GrpcServer<hello.peeps.GreeterService>;
 
 afterEach(async () => {
   if (server) {

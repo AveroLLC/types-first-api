@@ -11,8 +11,8 @@
     "dest"
   ],
   "scripts": {
-    "test": "jest",
-    "prepare": "tsc"
+    "test": "../../node_modules/jest/bin/jest.js",
+    "prepare": "tsc && npm test"
   },
   "author": "",
   "license": "Apache-2.0",
