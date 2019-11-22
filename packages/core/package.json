@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/core",
-  "version": "1.0.2-alpha.7",
+  "version": "1.0.2-alpha.9",
   "description": "Types-First API Core",
   "publishConfig": {
     "access": "public"
@@ -17,10 +17,10 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    "@grpc/proto-loader": "^0.5.3",
     "lodash": "^4.17.10",
     "protobufjs": "^6.8.8",
-    "rxjs": "^6.5.3",
-    "@grpc/proto-loader": "^0.5.3"
+    "rxjs": "^6.5.3"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.116"

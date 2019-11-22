@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/grpc-common",
-  "version": "1.0.2-alpha.7",
+  "version": "1.0.2-alpha.9",
   "description": "Types-First API common code for grpc client and server",
   "publishConfig": {
     "access": "public"
@@ -17,7 +17,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@types-first-api/core": "^1.0.2-alpha.7",
+    "@types-first-api/core": "^1.0.2-alpha.9",
     "grpc": "^1.24.2"
   },
   "gitHead": "3fb676b641df8b464936dd1c395c9a12290b1f89"
