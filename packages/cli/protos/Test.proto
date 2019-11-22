@@ -4,7 +4,19 @@ service TestService {
   rpc increment(IncrementRequest) returns (IncrementResponse);
   rpc concat(ConcatRequest) returns (ConcatResponse);
   rpc wrapped(WrappedMessage) returns (WrappedMessage);
+  rpc oneOfTest(oneOfTestRequest) returns (oneOfTestResponse);
+  rpc mapTest(mapTestRequest) returns (mapTestResponse);
+  rpc primitives(primitiveRequest) returns (primitiveResponse);
 }
+
+message primitiveRequest {
+  bool booleanValue = 1;
+  string stringValue = 2;
+  int32 numberValue = 3;
+  bytes byteValue = 4;
+}
+
+message primitiveResponse {}
 
 message IncrementRequest {
   required int32 val = 1;
@@ -31,4 +43,28 @@ message WrappedMessage {
   }
 
   WrappedString wrappedString = 2;
+}
+
+message first {
+  string value = 1;
+}
+message second {}
+message third {}
+
+message oneOfTestRequest {
+  oneof order {
+    first firstPlace = 1;
+    second secondPlace = 2;
+    third thirdPlace = 3; 
+  }
+}
+
+message oneOfTestResponse {}
+
+message mapTestRequest {
+  map<string, first> myMap = 1;
+}
+
+message mapTestResponse {
+  map<string, string> myArrayMap = 1;
 }

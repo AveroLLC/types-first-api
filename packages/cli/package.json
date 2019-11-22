@@ -11,7 +11,7 @@
     "dest"
   ],
   "scripts": {
-    "test": "npm run prepare && ./dest/index.js -o protos protos/Test.proto",
+    "test": "../../node_modules/typescript/bin/tsc && ./dest/index.js -o protos protos/Test.proto",
     "prepare": "tsc"
   },
   "bin": {

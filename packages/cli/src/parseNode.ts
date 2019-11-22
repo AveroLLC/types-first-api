@@ -1,6 +1,7 @@
 import * as ts from 'typescript';
 import * as pbjs from 'protobufjs';
 import * as _ from 'lodash';
+import { json } from 'body-parser';
 
 function isNamespace(obj: any): obj is pbjs.Namespace {
   return obj.nested != null;
@@ -71,7 +72,7 @@ function buildMessage(jsonNode: pbjs.Type, name: string): ts.Statement {
 }
 
 function buildField(jsonNode: pbjs.Field, name: string): ts.TypeElement {
-  const isOptional = jsonNode.defaultValue == null || jsonNode.repeated;
+  const isOptional = jsonNode.defaultValue == null || jsonNode.repeated || jsonNode.map;
 
   return ts.createPropertySignature(
     [],

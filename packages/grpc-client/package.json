@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "test": "../../node_modules/jest/bin/jest.js",
-    "prepare": "tsc && npm test",
+    "prepare": "tsc && npm run generate && npm test",
     "generate": "tfapi -o generated protos/Test.proto"
   },
   "dependencies": {
