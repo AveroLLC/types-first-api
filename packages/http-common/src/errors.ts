@@ -20,4 +20,4 @@ export const ERROR_CODES_TO_HTTP_STATUS: Record<StatusCodes, number> = {
 
 export const HTTP_STATUS_TO_ERROR_CODES: Record<number, StatusCodes> = _.invert(
   ERROR_CODES_TO_HTTP_STATUS
-);
+) as Record<number, StatusCodes>;

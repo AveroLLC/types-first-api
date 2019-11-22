@@ -20,5 +20,5 @@
     "@types-first-api/core": "^1.0.2-alpha.9",
     "grpc": "^1.24.2"
   },
-  "gitHead": "3fb676b641df8b464936dd1c395c9a12290b1f89"
+  "gitHead": "acfff6dddb1d03ce6fadd2ffbd890c0e32c052ee"
 }
