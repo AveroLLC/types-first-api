@@ -1,9 +1,7 @@
-import * as _ from "lodash";
-import { NEVER, Observable, race, Subject } from "rxjs";
-import { IError, StatusCodes } from "./errors";
-import { Metadata } from "./interfaces";
-import { map } from "rxjs/operators";
-import { of } from "rxjs/internal/observable/of";
+import * as _ from 'lodash';
+import { NEVER, Observable, race, Subject } from 'rxjs';
+import { IError, StatusCodes } from './errors';
+import { Metadata } from './interfaces';
 
 export interface ContextOpts {
   metadata?: Metadata;
@@ -19,14 +17,14 @@ Context is a container for propagating:
 
 const CANCELLATION_ERROR: IError = {
   code: StatusCodes.Cancelled,
-  message: "Request cancelled by the client.",
-  forwardedFor: []
+  message: 'Request cancelled by the client.',
+  forwardedFor: [],
 };
 
 export class Context {
   private data: Record<string, any> = {};
   public metadata: Metadata = {};
-  deadline: Date;
+  deadline?: Date;
   private timer: NodeJS.Timer;
   private _cancel$ = new Subject();
   private _parentCancel$: Observable<{}> = NEVER;
@@ -42,7 +40,7 @@ export class Context {
       const deadlineError: IError = {
         code: StatusCodes.Deadline,
         message: `Request exceeded deadline ${this.deadline.toISOString()}.`,
-        forwardedFor: []
+        forwardedFor: [],
       };
       if (dt > 0) {
         this.timer = setTimeout(() => {

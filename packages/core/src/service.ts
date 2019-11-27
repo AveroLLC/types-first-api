@@ -1,39 +1,42 @@
+import { Observable } from 'rxjs';
 import * as _ from 'lodash';
 import * as pbjs from 'protobufjs';
-import { defer, throwError, from, isObservable } from 'rxjs'
+import { defer, throwError, from, isObservable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Context } from './context';
 import { createError, DEFAULT_SERVER_ERROR, IError, StatusCodes } from './errors';
-import { GRPCService, Request, Response } from './interfaces';
+import { GRPCService, ServerRequest, ServerResponse } from './interfaces';
 import { createMessageValidator } from './middleware/messageValidation';
-import { shortCircuitRace } from './shortCircuitRace'
-import { Method } from 'protobufjs'
+import { shortCircuitRace } from './shortCircuitRace';
+import { Method } from 'protobufjs';
 
 export interface Handler<TReq, TRes, TDependencies extends object = {}> {
-  (request$: Request<TReq>, context: Context, dependencies: TDependencies): Response<
-    TRes
-  > | Promise<TRes>;
+  (
+    request$: ServerRequest<TReq>,
+    context: Context,
+    dependencies: TDependencies
+  ): ServerResponse<TRes>;
 }
 
-type RequestDetails =  {
-  method: Method
+type RequestDetails = {
+  method: Method;
 };
 
 export interface Middleware<
   TService extends GRPCService<TService>,
   TDependencies extends object = {}
-  > {
+> {
   (
-    request$: Request<TService[keyof TService]['request']>,
+    request$: Observable<TService[keyof TService]['request']>,
     context: Context,
     dependencies: TDependencies,
     next: (
-      request$: Request<TService[keyof TService]['request']>,
+      request$: Observable<TService[keyof TService]['request']>,
       context: Context,
       dependencies?: TDependencies
-    ) => Response<TService[keyof TService]['response']>,
+    ) => Observable<TService[keyof TService]['response']>,
     requestDetails: RequestDetails
-  ): Response<TService[keyof TService]['response']>;
+  ): Observable<TService[keyof TService]['response']>;
 }
 
 export type HandlerMap<
@@ -44,7 +47,7 @@ export type HandlerMap<
     TService[K]['request'],
     TService[K]['response'],
     TDependencies
-  >
+  >;
 };
 
 export class Service<
@@ -60,8 +63,8 @@ export class Service<
   pbjsService: pbjs.Service;
 
   constructor(protoService: pbjs.Service, dependencies: TDependencies) {
-    this.pbjsService = protoService;
     this._dependencies = dependencies;
+    this.pbjsService = protoService;
     this.pbjsService.resolveAll();
     this.addMiddleware(createMessageValidator());
   }
@@ -92,18 +95,20 @@ export class Service<
 
   call = <K extends keyof TService>(
     method: K,
-    request: Request<TService[K]['request']>,
+    request: ServerRequest<TService[K]['request']>,
     context: Context
-  ): Response<TService[K]['response']> => {
+  ): Observable<TService[K]['response']> => {
     const handler = this._handlers[method] || this._notImplemented(method);
-    const requestDetails = { method: this.pbjsService.methods[method as string]};
+    const requestDetails = {
+      method: this.pbjsService.methods[method as string],
+    };
 
     const handlerNext = (
-      req: Request<TService[K]['request']>,
+      req: Observable<TService[K]['request']>,
       ctx: Context,
       dependencies: TDependencies = this._dependencies
     ) => {
-      const handlerResult = handler(req, ctx, dependencies)
+      const handlerResult = handler(req, ctx, dependencies);
       return isObservable(handlerResult) ? handlerResult : from(handlerResult);
     };
 
@@ -131,8 +136,7 @@ export class Service<
   getName = (): string => {
     return this.pbjsService.fullName.slice(1);
   };
-
   getMethodNames = (): Array<keyof TService> => {
-    return this.pbjsService.methodsArray.map(m => m.name) as  Array<keyof TService>;
+    return this.pbjsService.methodsArray.map(m => m.name) as Array<keyof TService>;
   };
 }

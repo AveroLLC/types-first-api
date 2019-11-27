@@ -1,7 +1,7 @@
-import { from } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { IError, StatusCodes } from '../errors';
-import { Middleware } from '../service';
+import { from } from "rxjs";
+import { map } from "rxjs/operators";
+import { IError, StatusCodes } from "../errors";
+import { Middleware } from "../service";
 
 const PROTO_OPTIONS = {
   // enums: String, // enums as string names
@@ -10,15 +10,13 @@ const PROTO_OPTIONS = {
   defaults: true, // includes default values
   arrays: true, // populates empty arrays (repeated fields) even if defaults=false
   objects: true, // populates empty objects (map fields) even if defaults=false
-  oneofs: true, // includes virtual oneof fields set to the present field's name
+  oneofs: true // includes virtual oneof fields set to the present field's name
 };
 
 export function createMessageValidator(): Middleware<any, any> {
-
   return (req$, ctx, deps, next, { method }) => {
     const reqMessage = method.resolvedRequestType;
     const resMessage = method.resolvedResponseType;
-
     const validated$ = req$.pipe(
       map(d => {
         const validationError = reqMessage.verify(d);
@@ -27,11 +25,10 @@ export function createMessageValidator(): Middleware<any, any> {
             code: StatusCodes.BadRequest,
             message: validationError,
             stackTrace: new Error().stack,
-            forwardedFor: [],
+            forwardedFor: []
           };
           throw err;
         }
-
         return reqMessage.toObject(reqMessage.create(d));
       })
     );

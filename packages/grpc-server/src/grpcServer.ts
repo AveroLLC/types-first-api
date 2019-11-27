@@ -1,3 +1,5 @@
+import { map, flatMap } from 'rxjs/operators';
+import { from } from 'rxjs';
 import {
   Context,
   createError,
@@ -5,29 +7,39 @@ import {
   HEADERS,
   Metadata,
   Service,
+  GRPCService,
+  RpcCallMap,
+  RpcCall,
 } from '@types-first-api/core';
 import { ERROR_CODES_TO_GRPC_STATUS } from '@types-first-api/grpc-common';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
-import { Observable, of } from 'rxjs';
+import { Observable, of, isObservable } from 'rxjs';
 
-export class GrpcServer {
+export class GrpcServer<TServices extends GRPCService<TServices>> {
   private _server = new grpc.Server();
+  _rpc: RpcCallMap<TServices>;
 
-  constructor(...services: Service<any, any>[]) {
-    this.addServicesToServer(services)
+  constructor(...services: Service<TServices, any>[]) {
+    this._rpc = this.addServicesToServer(services);
   }
 
-  static createWithOptions = (options: Record<string, any>, ...services: Service<any, any>[]) => {
+  static createWithOptions = <GServices extends GRPCService<GServices>>(
+    options: Record<string, any>,
+    ...services: Service<GServices, any>[]
+  ): GrpcServer<GServices> => {
     const server = new grpc.Server(options);
     const instance = new GrpcServer();
     instance._server = server;
-    instance.addServicesToServer(services);
-    return instance;
-  }
+    instance._rpc = instance.addServicesToServer(services);
+    return instance as GrpcServer<GServices>;
+  };
 
-  protected addServicesToServer = (services: Service<any, any>[]) => {
-    _.forEach(services, service => {
+  protected addServicesToServer = (
+    services: Service<any, any>[]
+  ): RpcCallMap<TServices> => {
+    const rpcCallMap: RpcCallMap<any> = {};
+    _.forEach(services, (service: Service<any, any>) => {
       const { pbjsService } = service;
       const grpcObj = grpc.loadObject(pbjsService, {
         enumsAsStrings: false,
@@ -36,9 +48,24 @@ export class GrpcServer {
 
       this._server.addService(
         serviceDef,
-        _.mapValues(serviceDef, method => {
+        _.mapValues(serviceDef, (method: grpc.MethodDefinition<any, any>) => {
           const methodName = (method as any).originalName;
+          rpcCallMap[methodName] = (req, ctx) => {
+            const req$ = isObservable(req) ? req : of(req);
+            return req$.pipe(
+              flatMap(request => {
+                const processedReq = method.requestDeserialize(
+                  method.requestSerialize(request)
+                );
 
+                return service.call(
+                  methodName,
+                  of(processedReq),
+                  ctx || Context.create()
+                );
+              })
+            );
+          };
           if (method.requestStream && method.responseStream) {
             return this._makeBidiStreamingHandler(service, methodName);
           } else if (method.requestStream) {
@@ -51,8 +78,9 @@ export class GrpcServer {
         })
       );
     });
-  }
 
+    return rpcCallMap;
+  };
 
   bind = async (opts: { port: number; host?: string }) => {
     let { host, port } = opts;
@@ -157,7 +185,6 @@ export class GrpcServer {
       deadline,
     });
 
-    //@ts-ignore types for grpc node suck
     call.on('cancelled', () => {
       context.cancel();
     });

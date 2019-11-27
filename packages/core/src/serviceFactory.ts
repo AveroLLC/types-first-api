@@ -3,10 +3,9 @@ import { GRPCServiceMap } from './interfaces';
 import { Service } from './service';
 
 export function serviceFactory<TServices extends GRPCServiceMap<TServices>>(
-  root: pbjs.Root
+    root: pbjs.Root
 ) {
   root.resolveAll();
-
   function create<
     K extends Extract<keyof TServices, string>,
     TDependencies extends object
