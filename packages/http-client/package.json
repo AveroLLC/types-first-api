@@ -20,7 +20,7 @@
   "dependencies": {
     "@types-first-api/core": "^0.1.0",
     "@types-first-api/http-common": "^0.1.0",
-    "axios": "^0.18.0",
+    "axios": "^0.21.2",
     "lodash": "^4.17.10"
   },
   "peerDependencies": {
