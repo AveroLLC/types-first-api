@@ -3,7 +3,7 @@
     "@types/jest": "^23.3.1",
     "@types/node": "^10.9.4",
     "@types/protobufjs": "^6.0.0",
-    "jest": "^23.5.0",
+    "jest": "^29.3.1",
     "lerna": "^3.2.1",
     "rxjs": "^6.3.3",
     "ts-jest": "^23.1.4",
