@@ -18,7 +18,7 @@ describe('Service', () => {
   let context: Context;
   const usersSvc = {
     authenticate: () => of(true).pipe(delay(1000)),
-    justTen: () => 10
+    justTen: () => 10,
   };
 
   beforeEach(() => {
@@ -160,9 +160,7 @@ describe('Service', () => {
           const args = handler.mock.calls[0];
           expect(args[2]).toEqual({ usersSvc });
         });
-
-      })
-
+      });
     });
 
     describe('middleware', () => {
@@ -209,40 +207,37 @@ describe('Service', () => {
         });
       });
 
-
       it('invokes handler with decorated dependencies', () => {
-
-        handler.mockClear()
+        handler.mockClear();
         s.registerServiceHandler('increment', (req, ctx, deps) => {
           return req.pipe(
             map((d: any) => {
-              deps.usersSvc.justTen()
-              return { val: d.val + d.add }
+              deps.usersSvc.justTen();
+              return { val: d.val + d.add };
             })
-          )
-        })
+          );
+        });
 
-        const decoratingProxy = jest.fn((call) => call())
+        const decoratingProxy = jest.fn(call => call());
         const middleware = jest.fn((req, ctx, deps, next, requestDetails) => {
-
           const userService = {
             ...deps.usersSvc,
-            justTen: () => decoratingProxy(deps.usersSvc.justTen)
-          }
-          let nextDeps = {...deps, usersSvc: userService}
+            justTen: () => decoratingProxy(deps.usersSvc.justTen),
+          };
+          let nextDeps = { ...deps, usersSvc: userService };
 
-          return next(req, ctx, nextDeps)
-        })
+          return next(req, ctx, nextDeps);
+        });
 
-        s.addMiddleware(middleware)
+        s.addMiddleware(middleware);
 
-        const response = s.call('increment', of({ val: 10, add: 2 }), context)
+        const response = s.call('increment', of({ val: 10, add: 2 }), context);
 
         return response.toPromise().then(() => {
-          expect(middleware).toHaveBeenCalledTimes(1)
-          expect(get(decoratingProxy.mock.results, '[0].value')).toEqual(10)
-        })
-      })
+          expect(middleware).toHaveBeenCalledTimes(1);
+          expect(get(decoratingProxy.mock.results, '[0].value')).toEqual(10);
+        });
+      });
 
       it('catches errors thrown in middleware', () => {
         s.addMiddleware(() => {

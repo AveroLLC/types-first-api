@@ -1,0 +1,35 @@
+syntax = "proto3";
+package hello.peeps;
+
+// The greeting service definition.
+service GreeterService {
+  // Sends multiple greetings
+  rpc Hello (HelloRequest) returns (HelloReply) {}
+  rpc ClientSerialization (ClientSerializationRequest) returns (ClientSerializationResponse) {}
+  rpc ServerSerialization (ServerSerializationRequest) returns (ServerSerializationResponse) {}
+}
+
+
+message HelloRequest {
+  string name = 1;
+}
+
+// A response message containing a greeting
+message HelloReply {
+  string message = 1;
+}
+
+message ClientSerializationRequest {
+  string message = 1;
+}
+
+message ClientSerializationResponse {
+  bool isSerialized = 1;
+}
+
+message ServerSerializationRequest {
+  bool sendNull = 1;
+}
+message ServerSerializationResponse {
+  string message = 1;
+}

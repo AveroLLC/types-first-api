@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/core",
-  "version": "0.1.0",
+  "version": "1.0.2-alpha.10",
   "description": "Types-First API Core",
   "publishConfig": {
     "access": "public"
@@ -11,21 +11,19 @@
     "dest"
   ],
   "scripts": {
-    "test": "jest",
-    "prepare": "tsc"
+    "test": "../../node_modules/jest/bin/jest.js",
+    "prepare": "tsc && npm test"
   },
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    "@grpc/proto-loader": "^0.5.3",
     "lodash": "^4.17.10",
-    "protobufjs": "^6.8.8"
-  },
-  "peerDependencies": {
-    "rxjs": "^6.3.3"
+    "protobufjs": "^6.8.8",
+    "rxjs": "^6.5.3"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.116",
-    "jest": "^23.6.0"
+    "@types/lodash": "^4.14.116"
   },
   "jest": {
     "transform": {
@@ -41,5 +39,5 @@
       "node"
     ]
   },
-  "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac"
+  "gitHead": "acfff6dddb1d03ce6fadd2ffbd890c0e32c052ee"
 }

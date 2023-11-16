@@ -1,6 +1,6 @@
 {
   "name": "@types-first-api/grpc-client",
-  "version": "0.1.0",
+  "version": "1.0.2-alpha.10",
   "description": "Types-First API HTTP client",
   "publishConfig": {
     "access": "public"
@@ -11,31 +11,31 @@
     "dest"
   ],
   "scripts": {
-    "test": "jest",
-    "prepare": "tsc"
+    "test": "../../node_modules/jest/bin/jest.js",
+    "prepare": "tsc && npm run generate && npm test",
+    "generate": "tfapi -o generated protos/Test.proto"
   },
   "dependencies": {
-    "@types-first-api/core": "^0.1.0",
-    "@types-first-api/grpc-common": "^0.1.0",
-    "grpc": "^1.15.1",
-    "lodash": "^4.17.10"
-  },
-  "peerDependencies": {
-    "rxjs": "^6.3.3"
+    "@grpc/grpc-js": "^0.6.12",
+    "@grpc/proto-loader": "^0.5.3",
+    "@types-first-api/core": "^1.0.2-alpha.10",
+    "@types-first-api/grpc-common": "^1.0.2-alpha.10",
+    "protobufjs": "^6.8.8",
+    "rxjs": "^6.5.3",
+    "uuid": "^3.3.3"
   },
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types-first-api/grpc-server": "^0.1.0",
-    "@types/lodash": "^4.14.116",
-    "protobufjs": "^6.8.8"
+    "@types-first-api/cli": "^1.0.2-alpha.10",
+    "@types-first-api/grpc-server": "^1.0.2-alpha.10",
+    "@types/uuid": "^3.4.6"
   },
   "jest": {
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
     },
-    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-    "testEnvironment": "node",
+    "testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
     "moduleFileExtensions": [
       "ts",
       "tsx",
@@ -43,7 +43,8 @@
       "jsx",
       "json",
       "node"
-    ]
+    ],
+    "testEnvironment": "node"
   },
-  "gitHead": "0d35d93d4ad839afed18be480b6e6d26a48de2ac"
+  "gitHead": "acfff6dddb1d03ce6fadd2ffbd890c0e32c052ee"
 }

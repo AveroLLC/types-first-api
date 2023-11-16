@@ -1,0 +1,58 @@
+syntax = "proto3";
+package hello.peeps;
+
+// The greeting service definition.
+service GreeterService {
+  // Sends multiple greetings
+  rpc Hello (HelloRequest) returns (HelloReply) {}
+  rpc UnavailableHello (HelloRequest) returns (HelloReply) {}
+  rpc ConditionallyUnavailableHello (HelloRequest) returns (HelloReply) {}
+  rpc AsyncHello (AsyncHelloRequest) returns (HelloReply) {}
+  rpc Context (ContextRequest) returns (ContextResponse) {}
+  rpc DefaultValues (DefaultValuesRequest) returns (DefaultValuesRequest) {};
+  rpc EnumEncoding (EnumEncodingRequest) returns (EnumEncodingResponse) {};
+}
+
+// The request message containing the user's name
+message ContextRequest {}
+
+message ContextResponse {
+  map<string,string> metadata = 1;
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message AsyncHelloRequest {
+  string name = 1;
+  int32 timeout = 2;
+}
+
+// A response message containing a greeting
+message HelloReply {
+  string message = 1;
+}
+
+message DefaultValuesRequest {
+  string stringValue = 1;
+  repeated string stringArray = 2;
+  int32 numberValue = 3;
+  repeated int32 numberArray = 4;
+  HelloReply messageValue = 5;
+  repeated HelloReply messageArray = 6;
+}
+
+message EnumEncodingRequest {}
+
+message EnumEncodingResponse {
+  enum Colors {
+    RED = 1;
+    ORANGE = 2;
+    YELLOW = 3;
+    GREEN = 4;
+    BLUE = 5;
+    PURPLE = 6;
+  }
+  repeated Colors colors = 1;
+}
