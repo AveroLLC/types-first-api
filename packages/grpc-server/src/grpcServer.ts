@@ -12,7 +12,7 @@ import {
   RpcCall,
 } from '@types-first-api/core';
 import { ERROR_CODES_TO_GRPC_STATUS } from '@types-first-api/grpc-common';
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import * as _ from 'lodash';
 import { Observable, of, isObservable } from 'rxjs';
 

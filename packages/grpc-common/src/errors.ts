@@ -1,5 +1,5 @@
 import { StatusCodes } from '@types-first-api/core';
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 
 export const ERROR_CODES_TO_GRPC_STATUS: Record<StatusCodes, grpc.status> = {
   [StatusCodes.Ok]: grpc.status.OK,

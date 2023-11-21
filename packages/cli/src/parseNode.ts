@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import * as pbjs from 'protobufjs';
 import * as _ from 'lodash';
-import { json } from 'body-parser';
+// import { json } from 'body-parser';
 
 function isNamespace(obj: any): obj is pbjs.Namespace {
   return obj.nested != null;

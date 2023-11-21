@@ -2,7 +2,6 @@
   "devDependencies": {
     "@types/jest": "^24.0.18",
     "@types/node": "^9.6.55",
-    "@types/protobufjs": "^6.0.0",
     "jest": "^24.9.0",
     "lerna": "^3.19.0",
     "prettier": "^1.18.2",
